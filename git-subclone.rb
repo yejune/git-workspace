@@ -1,15 +1,15 @@
 class GitSubclone < Formula
-  desc "Manage nested git repositories with dual tracking - files in both mother and sub repos"
+  desc "Manage nested git repositories with independent push capability"
   homepage "https://github.com/yejune/git-subclone"
-  url "https://github.com/yejune/git-subclone/archive/refs/tags/v0.0.1.tar.gz"
-  sha256 "211c210afc3f184284ca4e6d83a3d1a753dc66ec9de00d714e19e3603eb70353"
+  url "https://github.com/yejune/git-subclone/archive/refs/tags/v0.0.2.tar.gz"
+  sha256 "61b71d37a0a7cd48269a5fd5bac5cf0686343e4e78875f47ae5337630e3461c7"
   license "MIT"
   head "https://github.com/yejune/git-subclone.git", branch: "main"
 
   depends_on "go" => :build
 
   def install
-        system "go", "build", "-o", "git-subclone", "./cmd/git-subclone"
+        system "go", "build", "-o", "git-subclone", "."
     bin.install "git-subclone"
   end
 
@@ -21,11 +21,16 @@ class GitSubclone < Formula
     <<~EOS
             git-subclone has been installed!
       
-      Usage:
-        git subclone add <repo> <path>   Add a subclone
-        git subclone sync                Sync all subclones
-        git subclone list                List subclones
-        git subclone push [path]         Push subclone(s)
+      Quick Start:
+        git subclone https://github.com/user/repo.git
+        git subclone https://github.com/user/repo.git packages/repo
+        git subclone -b develop https://github.com/user/repo.git
+      
+      Commands:
+        git subclone sync      Sync all subclones
+        git subclone list      List subclones
+        git subclone push      Push subclone(s)
+        git subclone status    Show status
     EOS
   end
 end

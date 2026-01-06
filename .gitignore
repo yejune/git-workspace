@@ -1,5 +1,10 @@
 # Binary
 git-subclone
+dist/
+
+# Python cache
+__pycache__/
+*.pyc
 
 # IDE
 .idea/

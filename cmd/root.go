@@ -1,0 +1,152 @@
+// Package cmd implements the CLI commands for git-subclone
+package cmd
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/spf13/cobra"
+	"github.com/yejune/git-subclone/internal/git"
+	"github.com/yejune/git-subclone/internal/manifest"
+)
+
+var (
+	// Version is set at build time via -ldflags
+	Version = "dev"
+	// Root command flags
+	rootBranch string
+	rootPath   string
+)
+
+var rootCmd = &cobra.Command{
+	Use:   "git-subclone [url] [path]",
+	Short: "Manage nested git repositories with independent push capability",
+	Long: `git-subclone manages nested git repositories within a parent project.
+
+Each subclone maintains its own .git directory and can push to its own remote,
+while the parent project tracks the source files (but not .git).
+
+Quick usage:
+  git subclone https://github.com/user/repo.git           # Clone to ./repo
+  git subclone https://github.com/user/repo.git lib/repo  # Clone to lib/repo
+  git subclone -b develop https://github.com/user/repo.git
+
+Commands:
+  sync     Clone or pull all subclones
+  list     List all registered subclones
+  push     Push changes in subclones
+  remove   Remove a subclone
+  init     Install git hooks for auto-sync`,
+	Version: Version,
+	Args:    cobra.MaximumNArgs(2),
+	RunE:    runRoot,
+}
+
+func init() {
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+	rootCmd.Flags().StringVarP(&rootBranch, "branch", "b", "", "Branch to clone")
+	rootCmd.Flags().StringVarP(&rootPath, "path", "p", "", "Destination path")
+}
+
+func runRoot(cmd *cobra.Command, args []string) error {
+	// No args = show help
+	if len(args) == 0 {
+		return cmd.Help()
+	}
+
+	repo := args[0]
+
+	// Determine path
+	var path string
+	if len(args) >= 2 {
+		path = args[1]
+	} else if rootPath != "" {
+		path = rootPath
+	} else {
+		// Extract repo name from URL
+		path = extractRepoName(repo)
+	}
+
+	// Get repository root
+	repoRoot, err := git.GetRepoRoot()
+	if err != nil {
+		return fmt.Errorf("not in a git repository: %w", err)
+	}
+
+	// Load manifest
+	m, err := manifest.Load(repoRoot)
+	if err != nil {
+		return fmt.Errorf("failed to load manifest: %w", err)
+	}
+
+	// Check if already exists
+	if m.Exists(path) {
+		return fmt.Errorf("subclone already exists at %s", path)
+	}
+
+	// Create parent directory if needed
+	fullPath := filepath.Join(repoRoot, path)
+	parentDir := filepath.Dir(fullPath)
+	if err := os.MkdirAll(parentDir, 0755); err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	// Clone the repository
+	fmt.Printf("Cloning %s into %s...\n", repo, path)
+	if err := git.Clone(repo, fullPath, rootBranch); err != nil {
+		return fmt.Errorf("failed to clone: %w", err)
+	}
+
+	// Add to manifest
+	m.Add(path, repo, rootBranch)
+	if err := manifest.Save(repoRoot, m); err != nil {
+		return fmt.Errorf("failed to save manifest: %w", err)
+	}
+
+	// Add .git directory to parent's .gitignore
+	if err := git.AddToGitignore(repoRoot, path); err != nil {
+		return fmt.Errorf("failed to update .gitignore: %w", err)
+	}
+
+	fmt.Printf("✓ Added subclone: %s\n", path)
+	fmt.Printf("  Repository: %s\n", repo)
+	if rootBranch != "" {
+		fmt.Printf("  Branch: %s\n", rootBranch)
+	}
+
+	return nil
+}
+
+// extractRepoName extracts repository name from URL
+// https://github.com/user/repo.git -> repo
+// git@github.com:user/repo.git -> repo
+func extractRepoName(url string) string {
+	// Remove trailing .git
+	url = strings.TrimSuffix(url, ".git")
+
+	// Get last path component
+	parts := strings.Split(url, "/")
+	name := parts[len(parts)-1]
+
+	// Handle git@host:user/repo format
+	if strings.Contains(name, ":") {
+		parts = strings.Split(name, ":")
+		name = parts[len(parts)-1]
+		// If still has /, get last part
+		if strings.Contains(name, "/") {
+			parts = strings.Split(name, "/")
+			name = parts[len(parts)-1]
+		}
+	}
+
+	return name
+}
+
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
