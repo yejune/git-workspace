@@ -1,0 +1,91 @@
+// Package manifest handles .subclones.yaml file operations
+package manifest
+
+import (
+	"os"
+	"path/filepath"
+
+	"gopkg.in/yaml.v3"
+)
+
+const FileName = ".subclones.yaml"
+
+// Subclone represents a single subclone entry
+type Subclone struct {
+	Path   string `yaml:"path"`
+	Repo   string `yaml:"repo"`
+	Branch string `yaml:"branch,omitempty"`
+}
+
+// Manifest represents the .subclones.yaml file structure
+type Manifest struct {
+	Subclones []Subclone `yaml:"subclones"`
+}
+
+// Load reads the manifest from the given directory
+func Load(dir string) (*Manifest, error) {
+	path := filepath.Join(dir, FileName)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return &Manifest{Subclones: []Subclone{}}, nil
+		}
+		return nil, err
+	}
+
+	var m Manifest
+	if err := yaml.Unmarshal(data, &m); err != nil {
+		return nil, err
+	}
+
+	if m.Subclones == nil {
+		m.Subclones = []Subclone{}
+	}
+
+	return &m, nil
+}
+
+// Save writes the manifest to the given directory
+func Save(dir string, m *Manifest) error {
+	path := filepath.Join(dir, FileName)
+	data, err := yaml.Marshal(m)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
+}
+
+// Add adds a new subclone to the manifest
+func (m *Manifest) Add(path, repo, branch string) {
+	m.Subclones = append(m.Subclones, Subclone{
+		Path:   path,
+		Repo:   repo,
+		Branch: branch,
+	})
+}
+
+// Remove removes a subclone from the manifest by path
+func (m *Manifest) Remove(path string) bool {
+	for i, sc := range m.Subclones {
+		if sc.Path == path {
+			m.Subclones = append(m.Subclones[:i], m.Subclones[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// Find finds a subclone by path
+func (m *Manifest) Find(path string) *Subclone {
+	for i := range m.Subclones {
+		if m.Subclones[i].Path == path {
+			return &m.Subclones[i]
+		}
+	}
+	return nil
+}
+
+// Exists checks if a subclone exists at the given path
+func (m *Manifest) Exists(path string) bool {
+	return m.Find(path) != nil
+}
