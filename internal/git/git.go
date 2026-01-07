@@ -23,6 +23,52 @@ func Clone(repo, path, branch string) error {
 	return cmd.Run()
 }
 
+// InitRepo initializes a git repository in an existing directory with source files
+// This is used when source files are already tracked by parent but .git is missing
+func InitRepo(path, repo, branch string) error {
+	// Create a temporary directory for bare clone
+	tempDir, err := os.MkdirTemp("", "git-sub-*")
+	if err != nil {
+		return fmt.Errorf("failed to create temp dir: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Clone as bare to temp location (only .git contents)
+	tempGit := filepath.Join(tempDir, "temp.git")
+	args := []string{"clone", "--bare"}
+	if branch != "" {
+		args = append(args, "-b", branch)
+	}
+	args = append(args, repo, tempGit)
+
+	cmd := exec.Command("git", args...)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to clone: %w", err)
+	}
+
+	// Move .git directory to target path
+	targetGit := filepath.Join(path, ".git")
+	if err := os.Rename(tempGit, targetGit); err != nil {
+		return fmt.Errorf("failed to move .git: %w", err)
+	}
+
+	// Convert from bare to normal repository
+	cmd = exec.Command("git", "-C", path, "config", "--bool", "core.bare", "false")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to configure: %w", err)
+	}
+
+	// Reset index to match HEAD (don't touch working tree files)
+	cmd = exec.Command("git", "-C", path, "reset", "--mixed", "HEAD")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to reset: %w", err)
+	}
+
+	return nil
+}
+
 // Pull pulls the latest changes in the specified directory
 func Pull(path string) error {
 	cmd := exec.Command("git", "-C", path, "pull")
@@ -233,45 +279,6 @@ func RemoveFromGitignore(repoRoot, path string) error {
 	return os.WriteFile(gitignorePath, []byte(strings.Join(newLines, "\n")), 0644)
 }
 
-// InitRepo initializes a git repo and adds remote
-func InitRepo(path, repo, branch string) error {
-	// git init
-	cmd := exec.Command("git", "-C", path, "init")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	// git remote add origin
-	cmd = exec.Command("git", "-C", path, "remote", "add", "origin", repo)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	// git fetch
-	cmd = exec.Command("git", "-C", path, "fetch", "origin")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	// Set upstream branch
-	targetBranch := branch
-	if targetBranch == "" {
-		targetBranch = "main"
-	}
-
-	cmd = exec.Command("git", "-C", path, "branch", "--set-upstream-to=origin/"+targetBranch)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Run() // Ignore error if branch doesn't exist yet
-
-	return nil
-}
 
 // HasChanges checks if there are uncommitted changes
 func HasChanges(path string) (bool, error) {

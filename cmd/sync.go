@@ -14,14 +14,13 @@ import (
 
 var syncCmd = &cobra.Command{
 	Use:   "sync",
-	Short: "Apply ignore and skip-worktree settings",
-	Long: `Apply configuration from .gitsubs:
+	Short: "Clone missing subs and apply configurations",
+	Long: `Sync all subs from .gitsubs manifest:
+  - Clone missing subs automatically
   - Install git hooks if not present
   - Apply ignore patterns to .gitignore
   - Apply skip-worktree to specified files
   - Verify .gitignore entries for subs
-
-Does NOT pull or clone repositories.
 
 Examples:
   git sub sync`,
@@ -91,8 +90,51 @@ func runSync(cmd *cobra.Command, args []string) error {
 
 		// Check if subclone exists
 		if !git.IsRepo(fullPath) {
-			fmt.Printf("    ✗ Not cloned (run: git sub clone %s %s)\n", sc.Repo, sc.Path)
-			issues++
+			// Check if directory has files (parent is tracking source)
+			entries, err := os.ReadDir(fullPath)
+			if err == nil && len(entries) > 0 {
+				// Directory exists with files - init git in place
+				fmt.Printf("    → Initializing .git (source files already present)\n")
+
+				if err := git.InitRepo(fullPath, sc.Repo, sc.Branch); err != nil {
+					fmt.Printf("    ✗ Failed to initialize: %v\n", err)
+					issues++
+					continue
+				}
+
+				// Add to .gitignore
+				if err := git.AddToGitignore(repoRoot, sc.Path); err != nil {
+					fmt.Printf("    ⚠ Failed to update .gitignore: %v\n", err)
+				}
+
+				fmt.Printf("    ✓ Initialized .git directory\n")
+				continue
+			}
+
+			// Directory empty or doesn't exist - clone normally
+			fmt.Printf("    → Cloning from %s\n", sc.Repo)
+
+			// Create parent directory if needed
+			parentDir := filepath.Dir(fullPath)
+			if err := os.MkdirAll(parentDir, 0755); err != nil {
+				fmt.Printf("    ✗ Failed to create directory: %v\n", err)
+				issues++
+				continue
+			}
+
+			// Clone the repository
+			if err := git.Clone(sc.Repo, fullPath, sc.Branch); err != nil {
+				fmt.Printf("    ✗ Clone failed: %v\n", err)
+				issues++
+				continue
+			}
+
+			// Add to .gitignore
+			if err := git.AddToGitignore(repoRoot, sc.Path); err != nil {
+				fmt.Printf("    ⚠ Failed to update .gitignore: %v\n", err)
+			}
+
+			fmt.Printf("    ✓ Cloned successfully\n")
 			continue
 		}
 

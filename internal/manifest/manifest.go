@@ -17,9 +17,10 @@ var marshalFunc = yaml.Marshal
 
 // Subclone represents a single subclone entry
 type Subclone struct {
-	Path string   `yaml:"path"`
-	Repo string   `yaml:"repo"`
-	Skip []string `yaml:"skip,omitempty"`
+	Path   string   `yaml:"path"`
+	Repo   string   `yaml:"repo"`
+	Branch string   `yaml:"branch,omitempty"`
+	Skip   []string `yaml:"skip,omitempty"`
 }
 
 // Manifest represents the .gitsubs file structure
