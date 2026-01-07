@@ -126,6 +126,20 @@ func applyLocalFilesFromManifest(repoRoot string) error {
 	return nil
 }
 
+// applyAutoIgnoreFromManifest applies autoIgnore patterns to .gitignore
+func applyAutoIgnoreFromManifest(repoRoot string) error {
+	m, err := manifest.Load(repoRoot)
+	if err != nil {
+		return err
+	}
+
+	if len(m.AutoIgnore) > 0 {
+		return git.AddPatternsToGitignore(repoRoot, m.AutoIgnore)
+	}
+
+	return nil
+}
+
 func runAdd(cmd *cobra.Command, args []string) error {
 	repo := args[0]
 	path := args[1]
@@ -135,8 +149,9 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Apply localFiles first
+	// Apply localFiles and autoIgnore first
 	applyLocalFilesFromManifest(repoRoot)
+	applyAutoIgnoreFromManifest(repoRoot)
 
 	fullPath := filepath.Join(repoRoot, path)
 
@@ -187,8 +202,11 @@ func runSync(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Apply localFiles after sync
-	return applyLocalFilesFromManifest(repoRoot)
+	// Apply localFiles and autoIgnore after sync
+	if err := applyLocalFilesFromManifest(repoRoot); err != nil {
+		return err
+	}
+	return applyAutoIgnoreFromManifest(repoRoot)
 }
 
 func syncDir(dir string, recursive bool) error {
@@ -257,8 +275,9 @@ func runList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Apply localFiles first
+	// Apply localFiles and autoIgnore first
 	applyLocalFilesFromManifest(repoRoot)
+	applyAutoIgnoreFromManifest(repoRoot)
 
 	m, err := manifest.Load(repoRoot)
 	if err != nil {
@@ -296,8 +315,9 @@ func runPush(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Apply localFiles first
+	// Apply localFiles and autoIgnore first
 	applyLocalFilesFromManifest(repoRoot)
+	applyAutoIgnoreFromManifest(repoRoot)
 
 	m, err := manifest.Load(repoRoot)
 	if err != nil {
@@ -456,6 +476,9 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Apply autoIgnore patterns
+	applyAutoIgnoreFromManifest(repoRoot)
+
 	fmt.Println("Installed git-subclone hooks")
 	return nil
 }
@@ -528,8 +551,9 @@ func runVerify(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Apply localFiles first
+	// Apply localFiles and autoIgnore first
 	applyLocalFilesFromManifest(repoRoot)
+	applyAutoIgnoreFromManifest(repoRoot)
 
 	m, err := manifest.Load(repoRoot)
 	if err != nil {

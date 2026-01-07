@@ -24,6 +24,7 @@ type Subclone struct {
 // Manifest represents the .subclones.yaml file structure
 type Manifest struct {
 	LocalFiles []string   `yaml:"localFiles,omitempty"`
+	AutoIgnore []string   `yaml:"autoIgnore,omitempty"`
 	Subclones  []Subclone `yaml:"subclones"`
 }
 

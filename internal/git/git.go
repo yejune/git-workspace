@@ -102,6 +102,71 @@ func AddToGitignore(repoRoot, path string) error {
 	return err
 }
 
+// AddPatternsToGitignore adds multiple patterns to .gitignore
+func AddPatternsToGitignore(repoRoot string, patterns []string) error {
+	if len(patterns) == 0 {
+		return nil
+	}
+
+	gitignorePath := filepath.Join(repoRoot, ".gitignore")
+
+	// Read existing content
+	content, err := os.ReadFile(gitignorePath)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	existingLines := make(map[string]bool)
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		existingLines[strings.TrimSpace(line)] = true
+	}
+
+	// Collect new patterns
+	var newPatterns []string
+	for _, pattern := range patterns {
+		pattern = strings.TrimSpace(pattern)
+		if pattern == "" || strings.HasPrefix(pattern, "#") {
+			continue
+		}
+		if !existingLines[pattern] {
+			newPatterns = append(newPatterns, pattern)
+		}
+	}
+
+	if len(newPatterns) == 0 {
+		return nil // All patterns already exist
+	}
+
+	// Append new patterns
+	f, err := os.OpenFile(gitignorePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	// Add newline if file doesn't end with one
+	if len(content) > 0 && content[len(content)-1] != '\n' {
+		if _, err := f.WriteString("\n"); err != nil {
+			return err
+		}
+	}
+
+	// Add header comment
+	if _, err := f.WriteString("\n# git-subclone autoIgnore\n"); err != nil {
+		return err
+	}
+
+	// Add patterns
+	for _, pattern := range newPatterns {
+		if _, err := f.WriteString(pattern + "\n"); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // RemoveFromGitignore removes a path's .git directory from .gitignore
 func RemoveFromGitignore(repoRoot, path string) error {
 	gitignorePath := filepath.Join(repoRoot, ".gitignore")
