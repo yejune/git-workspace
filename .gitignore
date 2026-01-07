@@ -32,3 +32,6 @@ coverage.out
 build/
 *.pyc
 __pycache__/
+
+# tobrew generated files
+git-sub.rb
