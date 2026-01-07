@@ -18,6 +18,7 @@ coverage.out
 # Do context/memory
 .do/context.md
 .do/memory/
+.do/logs/
 .claude/lib/
 .claude/agents/do/AGENT.md
 .claude/commands/do/check.md
