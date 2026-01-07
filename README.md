@@ -126,12 +126,35 @@ git sub add git@github.com:user/lib.git packages/lib -b develop
 
 ### `git sub sync`
 
-Clone or pull all registered subs.
+Auto-discover subs or sync from .gitsubs. Has two modes:
 
+**Mode 1: Discovery Mode** (no .gitsubs)
 ```bash
-git sub sync             # sync all subs
-git sub sync --recursive # recursively sync nested subs
+# Situation: .gitsubs doesn't exist
+packages/lib/.git/      # existing sub
+packages/utils/.git/    # existing sub
+
+git sub sync
+# → Recursively scans directories
+# → Auto-detects .git folders
+# → Extracts remote, branch, commit
+# → Creates .gitsubs automatically
 ```
+
+**Mode 2: Sync Mode** (has .gitsubs)
+```bash
+# Situation: .gitsubs exists
+git sub sync
+# → Reads .gitsubs
+# → Restores missing .git directories
+# → Installs/updates hooks
+# → Updates commit hashes if pushed
+```
+
+**Use Cases:**
+- Migrating existing project to git-sub
+- Recovering from deleted .gitsubs
+- First-time setup: just clone and run sync
 
 ### `git sub list`
 
