@@ -42,14 +42,14 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
         run: |
-          BINARY_NAME="git-subclone-${{ matrix.goos }}-${{ matrix.goarch }}"
-          go build -ldflags="-s -w -X github.com/yejune/git-subclone/cmd.Version=${{ steps.version.outputs.VERSION }}" -o "${BINARY_NAME}" .
+          BINARY_NAME="git-sub-${{ matrix.goos }}-${{ matrix.goarch }}"
+          go build -ldflags="-s -w -X github.com/yejune/git-sub/cmd.Version=${{ steps.version.outputs.VERSION }}" -o "${BINARY_NAME}" .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: git-subclone-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: git-subclone-${{ matrix.goos }}-${{ matrix.goarch }}
+          name: git-sub-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: git-sub-${{ matrix.goos }}-${{ matrix.goarch }}
 
   release:
     name: Create Release
@@ -91,7 +91,7 @@ jobs:
           else
             echo "## Initial Release" > release_notes.md
             echo "" >> release_notes.md
-            echo "First release of git-subclone" >> release_notes.md
+            echo "First release of git-sub" >> release_notes.md
           fi
 
       - name: Create GitHub Release
