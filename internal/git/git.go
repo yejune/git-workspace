@@ -196,3 +196,76 @@ func GetRemoteURL(path string) (string, error) {
 	}
 	return strings.TrimSpace(string(out)), nil
 }
+
+// ApplySkipWorktree applies skip-worktree to files
+func ApplySkipWorktree(repoPath string, files []string) error {
+	if len(files) == 0 {
+		return nil
+	}
+
+	for _, file := range files {
+		// Check if file exists
+		fullPath := filepath.Join(repoPath, file)
+		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+			// File doesn't exist, skip
+			continue
+		}
+
+		// Check if already skip-worktree
+		cmd := exec.Command("git", "-C", repoPath, "ls-files", "-v", file)
+		out, err := cmd.Output()
+		if err != nil {
+			continue
+		}
+
+		// If starts with 'S', already skip-worktree
+		if len(out) > 0 && out[0] == 'S' {
+			continue
+		}
+
+		// Apply skip-worktree
+		cmd = exec.Command("git", "-C", repoPath, "update-index", "--skip-worktree", file)
+		if err := cmd.Run(); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to apply skip-worktree to %s: %v\n", file, err)
+		}
+	}
+
+	return nil
+}
+
+// UnapplySkipWorktree removes skip-worktree from files
+func UnapplySkipWorktree(repoPath string, files []string) error {
+	if len(files) == 0 {
+		return nil
+	}
+
+	for _, file := range files {
+		cmd := exec.Command("git", "-C", repoPath, "update-index", "--no-skip-worktree", file)
+		if err := cmd.Run(); err != nil {
+			// Ignore errors (file might not be tracked)
+			continue
+		}
+	}
+
+	return nil
+}
+
+// ListSkipWorktree lists all files with skip-worktree set
+func ListSkipWorktree(repoPath string) ([]string, error) {
+	cmd := exec.Command("git", "-C", repoPath, "ls-files", "-v")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	var files []string
+	lines := strings.Split(string(out), "\n")
+	for _, line := range lines {
+		if len(line) > 2 && line[0] == 'S' {
+			// Format: "S filename"
+			files = append(files, strings.TrimSpace(line[2:]))
+		}
+	}
+
+	return files, nil
+}

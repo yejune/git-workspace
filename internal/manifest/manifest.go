@@ -15,14 +15,16 @@ var marshalFunc = yaml.Marshal
 
 // Subclone represents a single subclone entry
 type Subclone struct {
-	Path   string `yaml:"path"`
-	Repo   string `yaml:"repo"`
-	Branch string `yaml:"branch,omitempty"`
+	Path       string   `yaml:"path"`
+	Repo       string   `yaml:"repo"`
+	Branch     string   `yaml:"branch,omitempty"`
+	LocalFiles []string `yaml:"localFiles,omitempty"`
 }
 
 // Manifest represents the .subclones.yaml file structure
 type Manifest struct {
-	Subclones []Subclone `yaml:"subclones"`
+	LocalFiles []string   `yaml:"localFiles,omitempty"`
+	Subclones  []Subclone `yaml:"subclones"`
 }
 
 // Load reads the manifest from the given directory

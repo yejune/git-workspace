@@ -93,6 +93,39 @@ func main() {
 	}
 }
 
+// applyLocalFilesFromManifest applies skip-worktree to all localFiles in manifest
+func applyLocalFilesFromManifest(repoRoot string) error {
+	m, err := manifest.Load(repoRoot)
+	if err != nil {
+		return err
+	}
+
+	// Apply mother repo localFiles
+	if len(m.LocalFiles) > 0 {
+		if err := git.ApplySkipWorktree(repoRoot, m.LocalFiles); err != nil {
+			return err
+		}
+	}
+
+	// Apply each subclone's localFiles
+	for _, sc := range m.Subclones {
+		if len(sc.LocalFiles) == 0 {
+			continue
+		}
+
+		fullPath := filepath.Join(repoRoot, sc.Path)
+		if !git.IsRepo(fullPath) {
+			continue
+		}
+
+		if err := git.ApplySkipWorktree(fullPath, sc.LocalFiles); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func runAdd(cmd *cobra.Command, args []string) error {
 	repo := args[0]
 	path := args[1]
@@ -101,6 +134,9 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Apply localFiles first
+	applyLocalFilesFromManifest(repoRoot)
 
 	fullPath := filepath.Join(repoRoot, path)
 
@@ -147,7 +183,12 @@ func runSync(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return syncDir(repoRoot, recursive)
+	if err := syncDir(repoRoot, recursive); err != nil {
+		return err
+	}
+
+	// Apply localFiles after sync
+	return applyLocalFilesFromManifest(repoRoot)
 }
 
 func syncDir(dir string, recursive bool) error {
@@ -216,6 +257,9 @@ func runList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Apply localFiles first
+	applyLocalFilesFromManifest(repoRoot)
+
 	m, err := manifest.Load(repoRoot)
 	if err != nil {
 		return err
@@ -251,6 +295,9 @@ func runPush(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Apply localFiles first
+	applyLocalFilesFromManifest(repoRoot)
 
 	m, err := manifest.Load(repoRoot)
 	if err != nil {
@@ -480,6 +527,9 @@ func runVerify(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Apply localFiles first
+	applyLocalFilesFromManifest(repoRoot)
 
 	m, err := manifest.Load(repoRoot)
 	if err != nil {
