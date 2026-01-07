@@ -51,13 +51,39 @@ func runSync(cmd *cobra.Command, args []string) error {
 
 	// 2. Load manifest
 	m, err := manifest.Load(repoRoot)
-	if err != nil {
-		return fmt.Errorf("failed to load manifest: %w", err)
+	if err != nil || len(m.Subclones) == 0 {
+		// No manifest or empty - scan directories for existing subs
+		fmt.Println("\n→ No .gitsubs found. Scanning for existing sub repositories...")
+		discovered, scanErr := scanForSubs(repoRoot)
+		if scanErr != nil {
+			return fmt.Errorf("failed to scan directories: %w", scanErr)
+		}
+
+		if len(discovered) == 0 {
+			fmt.Println("✓ No sub repositories found")
+			fmt.Println("\nTo add a sub, use:")
+			fmt.Println("  git sub clone <url> <path>")
+			return nil
+		}
+
+		// Create manifest from discovered subs
+		m = &manifest.Manifest{
+			Subclones: discovered,
+		}
+
+		if err := manifest.Save(repoRoot, m); err != nil {
+			return fmt.Errorf("failed to save manifest: %w", err)
+		}
+
+		fmt.Printf("\n✓ Created .gitsubs with %d sub(s)\n", len(discovered))
+		for _, sc := range discovered {
+			fmt.Printf("  - %s (%s)\n", sc.Path, sc.Repo)
+		}
 	}
 
 	// 3. Apply ignore patterns to mother repo
 	if len(m.Ignore) > 0 {
-		fmt.Println("→ Applying ignore patterns")
+		fmt.Println("\n→ Applying ignore patterns")
 		if err := git.AddIgnorePatternsToGitignore(repoRoot, m.Ignore); err != nil {
 			fmt.Printf("  ✗ Failed: %v\n", err)
 		} else {
@@ -225,4 +251,72 @@ func hasGitignoreEntry(repoRoot, path string) bool {
 		}
 	}
 	return false
+}
+
+// scanForSubs recursively scans directories for git repositories
+func scanForSubs(repoRoot string) ([]manifest.Subclone, error) {
+	var subs []manifest.Subclone
+
+	// Walk the directory tree
+	err := filepath.Walk(repoRoot, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil // Skip errors
+		}
+
+		// Skip parent's .git directory
+		if path == filepath.Join(repoRoot, ".git") {
+			return filepath.SkipDir
+		}
+
+		// Check if this is a .git directory
+		if !info.IsDir() || info.Name() != ".git" {
+			return nil
+		}
+
+		// Get the repository path (parent of .git)
+		subPath := filepath.Dir(path)
+
+		// Skip if it's the parent repo itself
+		if subPath == repoRoot {
+			return filepath.SkipDir
+		}
+
+		// Get relative path from parent
+		relPath, err := filepath.Rel(repoRoot, subPath)
+		if err != nil {
+			return nil
+		}
+
+		// Extract git info
+		repo, err := git.GetRemoteURL(subPath)
+		if err != nil {
+			fmt.Printf("⚠ %s: failed to get remote URL: %v\n", relPath, err)
+			return filepath.SkipDir
+		}
+
+		branch, err := git.GetCurrentBranch(subPath)
+		if err != nil {
+			branch = ""
+		}
+
+		commit, err := git.GetCurrentCommit(subPath)
+		if err != nil {
+			fmt.Printf("⚠ %s: failed to get commit: %v\n", relPath, err)
+			return filepath.SkipDir
+		}
+
+		fmt.Printf("  Found: %s\n", relPath)
+
+		subs = append(subs, manifest.Subclone{
+			Path:   relPath,
+			Repo:   repo,
+			Branch: branch,
+			Commit: commit,
+		})
+
+		// Skip descending into this sub's subdirectories
+		return filepath.SkipDir
+	})
+
+	return subs, err
 }
