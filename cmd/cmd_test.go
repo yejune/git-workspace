@@ -574,7 +574,7 @@ func TestExecute(t *testing.T) {
 	defer func() { os.Args = oldArgs }()
 
 	t.Run("execute with version flag", func(t *testing.T) {
-		os.Args = []string{"git-subclone", "--version"}
+		os.Args = []string{"git-sub", "--version"}
 		// Execute calls os.Exit on error, so we can't directly test failure paths
 		// But we can verify it doesn't panic
 		defer func() {
@@ -2199,7 +2199,7 @@ func TestRootCmdExecute(t *testing.T) {
 		})
 
 		// Should show help/usage
-		if !strings.Contains(output, "git-subclone") {
+		if !strings.Contains(output, "git-sub") {
 			t.Logf("output: %s", output)
 		}
 	})

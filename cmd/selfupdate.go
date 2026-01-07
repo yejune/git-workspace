@@ -9,14 +9,14 @@ import (
 
 var selfupdateCmd = &cobra.Command{
 	Use:   "selfupdate",
-	Short: "Update git-subclone to the latest version",
-	Long: `Check for and install the latest version of git-subclone.
+	Short: "Update git-sub to the latest version",
+	Long: `Check for and install the latest version of git-sub.
 
 This command checks GitHub releases for a newer version and automatically
 downloads and installs it, replacing the current executable.
 
 Examples:
-  git-subclone selfupdate`,
+  git sub selfupdate`,
 	RunE: runSelfupdate,
 }
 

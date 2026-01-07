@@ -19,12 +19,12 @@ var syncCmd = &cobra.Command{
   - Install git hooks if not present
   - Apply ignore patterns to .gitignore
   - Apply skip-worktree to specified files
-  - Verify .gitignore entries for subclones
+  - Verify .gitignore entries for subs
 
 Does NOT pull or clone repositories.
 
 Examples:
-  git-subclone sync`,
+  git sub sync`,
 	RunE: runSync,
 }
 
@@ -91,7 +91,7 @@ func runSync(cmd *cobra.Command, args []string) error {
 
 		// Check if subclone exists
 		if !git.IsRepo(fullPath) {
-			fmt.Printf("    ✗ Not cloned (run: git subclone %s %s)\n", sc.Repo, sc.Path)
+			fmt.Printf("    ✗ Not cloned (run: git sub clone %s %s)\n", sc.Repo, sc.Path)
 			issues++
 			continue
 		}

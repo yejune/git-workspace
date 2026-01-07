@@ -14,15 +14,15 @@ var addBranch string
 
 var addCmd = &cobra.Command{
 	Use:   "add <repo> <path>",
-	Short: "Add a new subclone",
-	Long: `Clone a repository as a subclone and register it in .gitsubs.
+	Short: "Add a new sub",
+	Long: `Clone a repository as a sub and register it in .gitsubs.
 
-The subclone's source files will be tracked by the parent repo,
+The sub's source files will be tracked by the parent repo,
 but its .git directory will be ignored (added to .gitignore).
 
 Examples:
-  git-subclone add https://github.com/user/lib.git packages/lib
-  git-subclone add git@github.com:user/lib.git packages/lib -b develop`,
+  git sub add https://github.com/user/lib.git packages/lib
+  git sub add git@github.com:user/lib.git packages/lib -b develop`,
 	Args: cobra.ExactArgs(2),
 	RunE: runAdd,
 }

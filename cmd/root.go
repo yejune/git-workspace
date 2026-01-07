@@ -1,4 +1,4 @@
-// Package cmd implements the CLI commands for git-subclone
+// Package cmd implements the CLI commands for git-sub
 package cmd
 
 import (
@@ -21,23 +21,22 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "git-subclone [url] [path]",
+	Use:   "git-sub [url] [path]",
 	Short: "Manage nested git repositories with independent push capability",
-	Long: `git-subclone manages nested git repositories within a parent project.
+	Long: `git-sub manages nested git repositories within a parent project.
 
-Each subclone maintains its own .git directory and can push to its own remote,
+Each sub maintains its own .git directory and can push to its own remote,
 while the parent project tracks the source files (but not .git).
 
 Quick usage:
-  git subclone https://github.com/user/repo.git           # Clone to ./repo
-  git subclone https://github.com/user/repo.git lib/repo  # Clone to lib/repo
-  git subclone -b develop https://github.com/user/repo.git
+  git sub clone https://github.com/user/repo.git           # Clone to ./repo
+  git sub clone https://github.com/user/repo.git lib/repo  # Clone to lib/repo
+  git sub clone -b develop https://github.com/user/repo.git
 
 Commands:
-  sync     Clone or pull all subclones
-  list     List all registered subclones
-  push     Push changes in subclones
-  remove   Remove a subclone
+  sync     Clone or pull all subs
+  list     List all registered subs
+  remove   Remove a sub
   init     Install git hooks for auto-sync`,
 	Version: Version,
 	Args:    cobra.MaximumNArgs(2),
@@ -83,7 +82,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 
 	// Check if already exists
 	if m.Exists(path) {
-		return fmt.Errorf("subclone already exists at %s", path)
+		return fmt.Errorf("sub already exists at %s", path)
 	}
 
 	// Create parent directory if needed
@@ -110,7 +109,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to update .gitignore: %w", err)
 	}
 
-	fmt.Printf("✓ Added subclone: %s\n", path)
+	fmt.Printf("✓ Added sub: %s\n", path)
 	fmt.Printf("  Repository: %s\n", repo)
 
 	return nil

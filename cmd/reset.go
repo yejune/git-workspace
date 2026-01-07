@@ -22,9 +22,9 @@ This will:
 NOTE: This does NOT modify .gitsubs
 
 Examples:
-  git-subclone reset           # Reset both
-  git-subclone reset ignore    # Reset ignore only
-  git-subclone reset skip      # Reset skip only`,
+  git sub reset           # Reset both
+  git sub reset ignore    # Reset ignore only
+  git sub reset skip      # Reset skip only`,
 	RunE: runReset,
 }
 

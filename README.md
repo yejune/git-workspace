@@ -41,11 +41,11 @@ Git subtrees solve some problems but create others:
 
 ## Features
 
-- **Clone as sub**: `git-sub <url>` - just like `git clone`
+- **Clone as sub**: `git sub clone <url>` - just like `git clone`
 - **Sync all**: Pull/clone all subs with one command
-- **Direct push**: Push changes directly to sub's remote
+- **Direct push**: Each sub has independent `.git` - just `cd` and `git push`
 - **Auto-sync hook**: Optionally sync after checkout
-- **Self-update**: Update the binary with `git-sub selfupdate`
+- **Self-update**: Update the binary with `git sub selfupdate`
 - **Recursive sync**: Sync subs within subs
 
 ## Installation
@@ -91,97 +91,88 @@ sudo mv git-sub /usr/local/bin/
 
 ```bash
 # Clone a repository as sub
-git-sub https://github.com/user/repo.git
+git sub clone https://github.com/user/repo.git
 
 # With custom path
-git-sub https://github.com/user/repo.git packages/repo
+git sub clone https://github.com/user/repo.git packages/repo
 
 # With specific branch
-git-sub -b develop https://github.com/user/repo.git
+git sub clone -b develop https://github.com/user/repo.git
 
 # SSH format
-git-sub git@github.com:user/repo.git
+git sub clone git@github.com:user/repo.git
 ```
 
 ## Commands
 
-### `git-sub [url] [path]`
+### `git sub clone [url] [path]`
 
 Clone a repository as a sub (default command).
 
 ```bash
-git-sub https://github.com/user/lib.git              # -> ./lib/
-git-sub https://github.com/user/lib.git packages/lib # -> ./packages/lib/
-git-sub -b develop git@github.com:user/lib.git       # specific branch
+git sub clone https://github.com/user/lib.git              # -> ./lib/
+git sub clone https://github.com/user/lib.git packages/lib # -> ./packages/lib/
+git sub clone -b develop git@github.com:user/lib.git       # specific branch
 ```
 
-### `git-sub add [url] [path]`
+### `git sub add [url] [path]`
 
-Add a new sub (same as default command).
+Add a new sub (same as clone command).
 
 ```bash
-git-sub add https://github.com/user/lib.git packages/lib
-git-sub add git@github.com:user/lib.git packages/lib -b develop
+git sub add https://github.com/user/lib.git packages/lib
+git sub add git@github.com:user/lib.git packages/lib -b develop
 ```
 
-### `git-sub sync`
+### `git sub sync`
 
 Clone or pull all registered subs.
 
 ```bash
-git-sub sync             # sync all subs
-git-sub sync --recursive # recursively sync nested subs
+git sub sync             # sync all subs
+git sub sync --recursive # recursively sync nested subs
 ```
 
-### `git-sub list`
+### `git sub list`
 
 List all registered subs.
 
 ```bash
-git-sub list    # list subs
-git-sub ls      # alias
+git sub list    # list subs
+git sub ls      # alias
 ```
 
-### `git-sub status`
+### `git sub status`
 
 Show detailed status of all subs.
 
 ```bash
-git-sub status  # shows branch, commits ahead/behind, modified files
+git sub status  # shows branch, commits ahead/behind, modified files
 ```
 
-### `git-sub push [path]`
-
-Push changes in subs.
-
-```bash
-git-sub push packages/lib  # push specific sub
-git-sub push --all         # push all modified subs
-```
-
-### `git-sub remove [path]`
+### `git sub remove [path]`
 
 Remove a sub.
 
 ```bash
-git-sub remove packages/lib              # remove and delete files
-git-sub rm packages/lib --keep-files     # remove from manifest, keep files
+git sub remove packages/lib              # remove and delete files
+git sub rm packages/lib --keep-files     # remove from manifest, keep files
 ```
 
-### `git-sub init`
+### `git sub init`
 
 Install git hooks for auto-sync.
 
 ```bash
-git-sub init  # installs post-checkout hook to auto-sync
+git sub init  # installs post-checkout hook to auto-sync
 ```
 
-### `git-sub selfupdate`
+### `git sub selfupdate`
 
 Update git-sub to the latest version.
 
 ```bash
-git-sub selfupdate  # downloads and installs latest release
+git sub selfupdate  # downloads and installs latest release
 ```
 
 ## How It Works

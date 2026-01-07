@@ -15,20 +15,20 @@ var listRecursive bool
 var listCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls"},
-	Short:   "List all registered subclones",
-	Long: `Display all subclones registered in .gitsubs.
+	Short:   "List all registered subs",
+	Long: `Display all subs registered in .gitsubs.
 
 Shows path, repository URL, branch, and current status.
 
 Examples:
-  git-subclone list
-  git-subclone ls
-  git-subclone ls -r`,
+  git sub list
+  git sub ls
+  git sub ls -r`,
 	RunE: runList,
 }
 
 func init() {
-	listCmd.Flags().BoolVarP(&listRecursive, "recursive", "r", false, "Recursively list subclones within subclones")
+	listCmd.Flags().BoolVarP(&listRecursive, "recursive", "r", false, "Recursively list subs within subs")
 	rootCmd.AddCommand(listCmd)
 }
 

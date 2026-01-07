@@ -11,14 +11,14 @@ import (
 
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Show status of all subclones",
+	Short: "Show status of all subs",
 	Long: `Display detailed status information:
   - Mother repository ignore/skip configuration
-  - All subclones status
+  - All subs status
   - Verification results
 
 Examples:
-  git-subclone status`,
+  git sub status`,
 	RunE: runStatus,
 }
 
@@ -144,7 +144,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		for _, issue := range issues {
 			fmt.Printf("  ✗ %s\n", issue)
 		}
-		fmt.Println("\nRun 'git subclone sync' to fix automatically.")
+		fmt.Println("\nRun 'git sub sync' to fix automatically.")
 	} else {
 		fmt.Println("✓ All subclones verified successfully")
 	}

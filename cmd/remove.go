@@ -16,16 +16,16 @@ var removeKeepFiles bool
 var removeCmd = &cobra.Command{
 	Use:     "remove <path>",
 	Aliases: []string{"rm"},
-	Short:   "Remove a subclone",
-	Long: `Remove a subclone from the manifest and optionally delete its files.
+	Short:   "Remove a sub",
+	Long: `Remove a sub from the manifest and optionally delete its files.
 
 By default, prompts before deleting files. Use --force to skip confirmation.
 Use --keep-files to only remove from manifest without deleting files.
 
 Examples:
-  git-subclone remove packages/lib
-  git-subclone rm packages/lib --force
-  git-subclone rm packages/lib --keep-files`,
+  git sub remove packages/lib
+  git sub rm packages/lib --force
+  git sub rm packages/lib --keep-files`,
 	Args: cobra.ExactArgs(1),
 	RunE: runRemove,
 }
