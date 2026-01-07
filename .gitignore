@@ -14,3 +14,10 @@ __pycache__/
 # OS
 .DS_Store
 coverage.out
+
+# Do context/memory
+.do/context.md
+.do/memory/
+
+# Build
+build/
