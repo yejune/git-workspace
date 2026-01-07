@@ -7,7 +7,7 @@
 
 Manage nested git repositories with independent push capability.
 
-## Why Subclone?
+## Why git-sub?
 
 Git submodules are powerful but come with friction:
 
@@ -21,10 +21,10 @@ Git subtrees solve some problems but create others:
 - **Special commands**: `git subtree push` with arcane syntax
 - **No independent repo**: Can't easily work on the subtree as a separate project
 
-**Subclone takes a different approach:**
+**git-sub takes a different approach:**
 
-| Feature | Submodule | Subtree | Subclone |
-|---------|-----------|---------|----------|
+| Feature | Submodule | Subtree | git-sub |
+|---------|-----------|---------|---------|
 | Simple clone | `--recursive` required | Yes | Yes (with hook) |
 | Intuitive push | Yes | Special command | Yes |
 | Files in parent repo | Pointer only | Yes | Yes |
@@ -32,7 +32,7 @@ Git subtrees solve some problems but create others:
 | Independent repository | Yes | No | Yes |
 | Easy to understand | No | No | Yes |
 
-**Subclone = Best of both worlds**
+**git-sub = Best of both worlds**
 
 - Source files tracked by parent (like subtree)
 - Independent `.git` for direct push (like submodule)
@@ -41,12 +41,12 @@ Git subtrees solve some problems but create others:
 
 ## Features
 
-- **Clone as subclone**: `git-sub <url>` - just like `git clone`
-- **Sync all**: Pull/clone all subclones with one command
-- **Direct push**: Push changes directly to subclone's remote
+- **Clone as sub**: `git-sub <url>` - just like `git clone`
+- **Sync all**: Pull/clone all subs with one command
+- **Direct push**: Push changes directly to sub's remote
 - **Auto-sync hook**: Optionally sync after checkout
 - **Self-update**: Update the binary with `git-sub selfupdate`
-- **Recursive sync**: Sync subclones within subclones
+- **Recursive sync**: Sync subs within subs
 
 ## Installation
 
@@ -90,7 +90,7 @@ sudo mv git-sub /usr/local/bin/
 ## Quick Start
 
 ```bash
-# Clone a repository as subclone
+# Clone a repository as sub
 git-sub https://github.com/user/repo.git
 
 # With custom path
@@ -107,7 +107,7 @@ git-sub git@github.com:user/repo.git
 
 ### `git-sub [url] [path]`
 
-Clone a repository as a subclone (default command).
+Clone a repository as a sub (default command).
 
 ```bash
 git-sub https://github.com/user/lib.git              # -> ./lib/
@@ -117,7 +117,7 @@ git-sub -b develop git@github.com:user/lib.git       # specific branch
 
 ### `git-sub add [url] [path]`
 
-Add a new subclone (same as default command).
+Add a new sub (same as default command).
 
 ```bash
 git-sub add https://github.com/user/lib.git packages/lib
@@ -126,25 +126,25 @@ git-sub add git@github.com:user/lib.git packages/lib -b develop
 
 ### `git-sub sync`
 
-Clone or pull all registered subclones.
+Clone or pull all registered subs.
 
 ```bash
-git-sub sync             # sync all subclones
-git-sub sync --recursive # recursively sync nested subclones
+git-sub sync             # sync all subs
+git-sub sync --recursive # recursively sync nested subs
 ```
 
 ### `git-sub list`
 
-List all registered subclones.
+List all registered subs.
 
 ```bash
-git-sub list    # list subclones
+git-sub list    # list subs
 git-sub ls      # alias
 ```
 
 ### `git-sub status`
 
-Show detailed status of all subclones.
+Show detailed status of all subs.
 
 ```bash
 git-sub status  # shows branch, commits ahead/behind, modified files
@@ -152,16 +152,16 @@ git-sub status  # shows branch, commits ahead/behind, modified files
 
 ### `git-sub push [path]`
 
-Push changes in subclones.
+Push changes in subs.
 
 ```bash
-git-sub push packages/lib  # push specific subclone
-git-sub push --all         # push all modified subclones
+git-sub push packages/lib  # push specific sub
+git-sub push --all         # push all modified subs
 ```
 
 ### `git-sub remove [path]`
 
-Remove a subclone.
+Remove a sub.
 
 ```bash
 git-sub remove packages/lib              # remove and delete files
@@ -191,22 +191,22 @@ git-sub selfupdate  # downloads and installs latest release
 ```
 my-project/
 ├── .git/                    <- Parent project git
-├── .gitsubs          <- Subclone manifest (tracked by parent)
+├── .gitsubs                 <- Sub manifest (tracked by parent)
 ├── .gitignore               <- Contains "packages/lib/.git/"
 ├── src/
 │   └── main.go
 └── packages/
     └── lib/
-        ├── .git/            <- Subclone's independent git
+        ├── .git/            <- Sub's independent git
         └── lib.go           <- Tracked by BOTH repos
 ```
 
 ### Key Points
 
-1. **Independent Git**: Each subclone has its own `.git` directory
-2. **Source Tracking**: Parent tracks subclone's source files (not `.git`)
+1. **Independent Git**: Each sub has its own `.git` directory
+2. **Source Tracking**: Parent tracks sub's source files (not `.git`)
 3. **Direct Push**: `cd packages/lib && git push` works as expected
-4. **Manifest File**: `.gitsubs` records all subclones
+4. **Manifest File**: `.gitsubs` records all subs
 
 ### Manifest Format
 
