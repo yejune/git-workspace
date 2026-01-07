@@ -24,7 +24,8 @@ formula:
           git-sub -b develop https://github.com/user/repo.git
 
         Commands:
-          git-sub sync      Sync all subclones
-          git-sub list      List subclones
-          git-sub push      Push subclone(s)
+          git-sub sync      Apply configuration
+          git-sub list      List subs
+          git-sub push      Push sub(s)
           git-sub status    Show status
+          git-sub branch    Show branch info
