@@ -574,7 +574,7 @@ func TestExecute(t *testing.T) {
 	defer func() { os.Args = oldArgs }()
 
 	t.Run("execute with version flag", func(t *testing.T) {
-		os.Args = []string{"git-sub", "--version"}
+		os.Args = []string{"git-workspace", "--version"}
 		// Execute calls os.Exit on error, so we can't directly test failure paths
 		// But we can verify it doesn't panic
 		defer func() {
@@ -810,7 +810,7 @@ func TestStatusWithNotCloned(t *testing.T) {
 
 // TestSyncWithCloneError removed - sync no longer performs clone operations in v0.1.0
 // Sync only applies configuration (ignore/skip patterns)
-// Cloning is done via the main command: git-sub <url> <path>
+// Cloning is done via the main command: git-workspace <url> <path>
 
 func TestSyncDirRecursiveWithError(t *testing.T) {
 	dir, cleanup := setupTestEnv(t)
@@ -2199,7 +2199,7 @@ func TestRootCmdExecute(t *testing.T) {
 		})
 
 		// Should show help/usage
-		if !strings.Contains(output, "git-sub") {
+		if !strings.Contains(output, "git-workspace") {
 			t.Logf("output: %s", output)
 		}
 	})

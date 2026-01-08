@@ -7,16 +7,16 @@ import (
 )
 
 const postCheckoutHook = `#!/bin/sh
-# git-sub post-checkout hook
+# git-workspace post-checkout hook
 # Automatically syncs subs after checkout
 
-if command -v git-sub >/dev/null 2>&1; then
-    git-sub sync --recursive
+if command -v git-workspace >/dev/null 2>&1; then
+    git-workspace sync --recursive
 fi
 `
 
 const postCommitHook = `#!/bin/sh
-# git-sub post-commit hook for sub repositories
+# git-workspace post-commit hook for sub repositories
 # Automatically updates parent's .workspaces after commit
 
 # Find parent repository (look for .workspaces)
@@ -45,8 +45,8 @@ if [ -z "$PARENT_ROOT" ]; then
     exit 0
 fi
 
-# Check if git-sub is available
-if ! command -v git-sub >/dev/null 2>&1; then
+# Check if git-workspace is available
+if ! command -v git-workspace >/dev/null 2>&1; then
     exit 0
 fi
 
@@ -59,7 +59,7 @@ if [ -z "$SUB_PATH" ]; then
 fi
 
 # Update parent's .workspaces (only if pushed)
-cd "$PARENT_ROOT" && git-sub sync --update-manifest-only --quiet 2>/dev/null || true
+cd "$PARENT_ROOT" && git-workspace sync --update-manifest-only --quiet 2>/dev/null || true
 `
 
 // Install installs git hooks in the repository

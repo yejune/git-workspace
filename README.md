@@ -152,7 +152,7 @@ git workspace sync
 ```
 
 **Use Cases:**
-- Migrating existing project to git-sub
+- Migrating existing project to git-workspace
 - Recovering from deleted .workspaces
 - First-time setup: just clone and run sync
 

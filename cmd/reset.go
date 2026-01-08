@@ -16,16 +16,16 @@ var resetCmd = &cobra.Command{
 	Long: `Reset both ignore patterns and skip-worktree files.
 
 This will:
-  - Remove git-sub section from .gitignore
+  - Remove git-workspace section from .gitignore
   - Remove all skip-worktree flags
   - Reapply from .workspaces
 
 NOTE: This does NOT modify .workspaces
 
 Examples:
-  git sub reset           # Reset both
-  git sub reset ignore    # Reset ignore only
-  git sub reset skip      # Reset skip only`,
+  git workspace reset           # Reset both
+  git workspace reset ignore    # Reset ignore only
+  git workspace reset skip      # Reset skip only`,
 	RunE: runReset,
 }
 

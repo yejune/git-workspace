@@ -6,9 +6,9 @@ before:
     - go mod tidy
 
 builds:
-  - id: git-subclone
+  - id: git-workspace
     main: .
-    binary: git-subclone
+    binary: git-workspace
     env:
       - CGO_ENABLED=0
     goos:
@@ -23,7 +23,7 @@ builds:
         goarch: arm64
     ldflags:
       - -s -w
-      - -X github.com/yejune/git-subclone/cmd.Version={{.Version}}
+      - -X github.com/yejune/git-workspace/cmd.Version={{.Version}}
 
 archives:
   - id: default
@@ -52,16 +52,16 @@ changelog:
       - '^chore:'
 
 brews:
-  - name: git-subclone
+  - name: git-workspace
     repository:
       owner: yejune
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     folder: Formula
-    homepage: "https://github.com/yejune/git-subclone"
+    homepage: "https://github.com/yejune/git-workspace"
     description: "Manage nested git repositories with independent push capability"
     license: "MIT"
     install: |
-      bin.install "git-subclone"
+      bin.install "git-workspace"
     test: |
-      system "#{bin}/git-subclone", "--version"
+      system "#{bin}/git-workspace", "--version"

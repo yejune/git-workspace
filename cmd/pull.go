@@ -1,4 +1,4 @@
-// Package cmd implements the CLI commands for git-sub
+// Package cmd implements the CLI commands for git-workspace
 package cmd
 
 import (
@@ -22,8 +22,8 @@ var pullCmd = &cobra.Command{
 	Long: `Pull latest changes for registered subs.
 
 Examples:
-  git sub pull              # Pull all subs with confirmation
-  git sub pull apps/admin   # Pull specific sub only
+  git workspace pull              # Pull all subs with confirmation
+  git workspace pull apps/admin   # Pull specific sub only
 
 For each sub:
   1. Shows current branch and uncommitted files
@@ -185,7 +185,7 @@ func handleKeepFiles(wsPath, branch string, keepFiles []string) error {
 		}
 
 		// Create temporary patch directory
-		patchDir := filepath.Join(wsPath, ".git", "git-sub", "patches")
+		patchDir := filepath.Join(wsPath, ".git", "git-workspace", "patches")
 		if err := os.MkdirAll(patchDir, 0755); err != nil {
 			return fmt.Errorf("failed to create patch directory: %w", err)
 		}

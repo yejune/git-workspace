@@ -1,4 +1,4 @@
-// Package i18n provides internationalization support for git-sub
+// Package i18n provides internationalization support for git-workspace
 package i18n
 
 import "fmt"
@@ -15,7 +15,7 @@ var messages = map[string]map[string]string{
 		"pull_already_uptodate": "✓ Already up to date",
 		"pull_failed":         "✗ Failed",
 		"pull_skipped":        "→ Skipped",
-		"run_status":          "→ Run: git sub status %s",
+		"run_status":          "→ Run: git workspace status %s",
 		"not_git_repo":        "→ Not a git repository, skipping",
 		"failed_get_branch":   "✗ Failed to get branch: %v",
 		"failed_read_input":   "✗ Failed to read input: %v",
@@ -58,7 +58,7 @@ var messages = map[string]map[string]string{
 		"no_gitsubs_found":     "\n→ No .workspaces found. Scanning for existing sub repositories...",
 		"no_subs_found":        "✓ No sub repositories found",
 		"to_add_sub":           "\nTo add a sub, use:",
-		"cmd_git_sub_clone":    "  git sub clone <url> <path>",
+		"cmd_git_sub_clone":    "  git workspace clone <url> <path>",
 		"created_gitsubs":      "\n✓ Created .workspaces with %d sub(s)",
 		"applying_ignore":      "\n→ Applying ignore patterns",
 		"applied_patterns":     "✓ Applied %d patterns",
@@ -103,7 +103,7 @@ var messages = map[string]map[string]string{
 		"pull_already_uptodate": "✓ 이미 최신 상태",
 		"pull_failed":         "✗ 실패",
 		"pull_skipped":        "→ 건너뜀",
-		"run_status":          "→ 실행: git sub status %s",
+		"run_status":          "→ 실행: git workspace status %s",
 		"not_git_repo":        "→ git 저장소가 아님, 건너뜀",
 		"failed_get_branch":   "✗ 브랜치 확인 실패: %v",
 		"failed_read_input":   "✗ 입력 읽기 실패: %v",
@@ -146,7 +146,7 @@ var messages = map[string]map[string]string{
 		"no_gitsubs_found":     "\n→ .workspaces를 찾을 수 없음. 기존 sub 저장소 검색 중...",
 		"no_subs_found":        "✓ sub 저장소를 찾지 못했습니다",
 		"to_add_sub":           "\nsub을 추가하려면:",
-		"cmd_git_sub_clone":    "  git sub clone <url> <path>",
+		"cmd_git_sub_clone":    "  git workspace clone <url> <path>",
 		"created_gitsubs":      "\n✓ %d개 sub로 .workspaces 생성됨",
 		"applying_ignore":      "\n→ ignore 패턴 적용 중",
 		"applied_patterns":     "✓ %d개 패턴 적용됨",

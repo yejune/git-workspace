@@ -22,8 +22,8 @@ Shows:
   - Current branch
 
 Examples:
-  git-sub branch                 # Show all subs
-  git-sub branch packages/lib    # Show specific sub`,
+  git-workspace branch                 # Show all subs
+  git-workspace branch packages/lib    # Show specific sub`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runBranch,
 }
