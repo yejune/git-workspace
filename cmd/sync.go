@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/yejune/git-workspace/internal/backup"
@@ -325,7 +326,36 @@ func processKeepFiles(repoRoot, workspacePath string, keepFiles []string, issues
 	backupDir := filepath.Join(repoRoot, ".workspaces", "backup")
 	patchBaseDir := filepath.Join(repoRoot, ".workspaces", "patches")
 
-	// 1. Get ALL modified files (not just Keep files)
+	// Determine workspace path for patches and backups
+	relPath, err := filepath.Rel(repoRoot, workspacePath)
+	if err != nil {
+		relPath = filepath.Base(workspacePath)
+	}
+	if relPath == "." {
+		relPath = ""
+	}
+
+	// Clean slate strategy: Remove directories before saving to prevent file leakage
+
+	// 1. Clean patches directory (complete workspace patch dir)
+	patchDir := filepath.Join(patchBaseDir, relPath)
+	os.RemoveAll(patchDir)
+	os.MkdirAll(patchDir, 0755)
+
+	// 2. Clean today's backup directories
+	today := time.Now().Format("2006/01/02")
+
+	// Clean today's modified backup
+	modifiedDir := filepath.Join(backupDir, "modified", today, relPath)
+	os.RemoveAll(modifiedDir)
+	os.MkdirAll(modifiedDir, 0755)
+
+	// Clean today's patched backup
+	patchedDir := filepath.Join(backupDir, "patched", today, relPath)
+	os.RemoveAll(patchedDir)
+	os.MkdirAll(patchedDir, 0755)
+
+	// 3. Get ALL modified files (not just Keep files)
 	modifiedFiles, err := git.GetModifiedFiles(workspacePath)
 	if err != nil {
 		fmt.Printf("        Failed to get modified files: %v\n", err)
@@ -342,7 +372,7 @@ func processKeepFiles(repoRoot, workspacePath string, keepFiles []string, issues
 	}
 	modifiedFiles = cleanModifiedFiles
 
-	// 2. Auto-populate Keep list if empty and there are modified files
+	// 4. Auto-populate Keep list if empty and there are modified files
 	if len(keepFiles) == 0 && len(modifiedFiles) > 0 {
 		// Load manifest to update it
 		m, loadErr := manifest.Load(repoRoot)
@@ -350,15 +380,6 @@ func processKeepFiles(repoRoot, workspacePath string, keepFiles []string, issues
 			fmt.Printf("        Failed to load manifest: %v\n", loadErr)
 			*issues++
 			return
-		}
-
-		// Determine relative path for workspace identification
-		relPath, relErr := filepath.Rel(repoRoot, workspacePath)
-		if relErr != nil {
-			relPath = filepath.Base(workspacePath)
-		}
-		if relPath == "." {
-			relPath = ""
 		}
 
 		// Update the keep list in manifest
@@ -392,7 +413,7 @@ func processKeepFiles(repoRoot, workspacePath string, keepFiles []string, issues
 		fmt.Println("\nEdit .git.workspaces to keep only the files you need")
 	}
 
-	// 3. Process ALL modified files (backup + patch for all)
+	// 5. Process ALL modified files (backup + patch for all)
 	for _, file := range modifiedFiles {
 		filePath := filepath.Join(workspacePath, file)
 
@@ -401,23 +422,14 @@ func processKeepFiles(repoRoot, workspacePath string, keepFiles []string, issues
 			continue // Skip if file doesn't exist
 		}
 
-		// Determine relative path for patch organization
-		relPath, err := filepath.Rel(repoRoot, workspacePath)
-		if err != nil {
-			relPath = filepath.Base(workspacePath)
-		}
-		if relPath == "." {
-			relPath = ""
-		}
-
-		// 3a. Backup original file to backup/modified/
+		// 5a. Backup original file to backup/modified/
 		if err := backup.CreateFileBackup(filePath, backupDir); err != nil {
 			fmt.Printf("        Failed to backup %s: %v\n", file, err)
 			*issues++
 			continue
 		}
 
-		// 3b. Create patch (git diff HEAD file)
+		// 5b. Create patch (git diff HEAD file)
 		patchPath := filepath.Join(patchBaseDir, relPath, file+".patch")
 		if err := patch.Create(workspacePath, file, patchPath); err != nil {
 			fmt.Printf("        Failed to create patch for %s: %v\n", file, err)
@@ -425,7 +437,7 @@ func processKeepFiles(repoRoot, workspacePath string, keepFiles []string, issues
 			continue
 		}
 
-		// 3c. Backup patch to backup/patched/
+		// 5c. Backup patch to backup/patched/
 		if err := backup.CreatePatchBackup(patchPath, backupDir); err != nil {
 			fmt.Printf("        Failed to backup patch for %s: %v\n", file, err)
 			*issues++
@@ -433,7 +445,7 @@ func processKeepFiles(repoRoot, workspacePath string, keepFiles []string, issues
 		}
 	}
 
-	// 4. Apply skip-worktree ONLY to Keep files
+	// 6. Apply skip-worktree ONLY to Keep files
 	if len(keepFiles) > 0 {
 		fmt.Printf("        Applying skip-worktree to %d keep files...\n", len(keepFiles))
 		for _, file := range keepFiles {
