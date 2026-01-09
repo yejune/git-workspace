@@ -21,8 +21,15 @@ func CreatePatchBackup(patchPath, backupDir string) error {
 	now := time.Now()
 	timestamp := now.Format("20060102_150405")
 
-	// Extract relative path from .workspaces/patches/
-	relPath := strings.TrimPrefix(patchPath, ".workspaces/patches/")
+	// Extract relative path from .workspaces/patches/ (handle both absolute and relative paths)
+	relPath := patchPath
+	// Try to find .workspaces/patches/ in the path
+	if idx := strings.Index(patchPath, ".workspaces/patches/"); idx != -1 {
+		relPath = patchPath[idx+len(".workspaces/patches/"):]
+	} else if idx := strings.Index(patchPath, ".workspaces-patches/"); idx != -1 {
+		// Fallback for old naming
+		relPath = patchPath[idx+len(".workspaces-patches/"):]
+	}
 
 	// Build backup path: backup/patched/yyyy/mm/dd/...
 	backupPath := filepath.Join(
@@ -52,7 +59,7 @@ func CreatePatchBackup(patchPath, backupDir string) error {
 
 // CreateFileBackup backs up the entire file with timestamp
 // Backup structure: backup/modified/yyyy/mm/dd/sub-path/file.yyyymmdd_hhmmss.ext
-func CreateFileBackup(filePath, backupDir string) error {
+func CreateFileBackup(filePath, backupDir, repoRoot string) error {
 	// Check if file exists
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return nil // No file to backup
@@ -62,6 +69,18 @@ func CreateFileBackup(filePath, backupDir string) error {
 	now := time.Now()
 	timestamp := now.Format("20060102_150405")
 
+	// Extract relative path from repoRoot (handle both absolute and relative paths)
+	relPath := filePath
+	// If it's an absolute path, make it relative to repoRoot
+	if filepath.IsAbs(filePath) {
+		var err error
+		relPath, err = filepath.Rel(repoRoot, filePath)
+		if err != nil {
+			// Fallback: use the original path if we can't make it relative
+			relPath = filePath
+		}
+	}
+
 	// Build backup path: backup/modified/yyyy/mm/dd/...
 	backupPath := filepath.Join(
 		backupDir,
@@ -69,7 +88,7 @@ func CreateFileBackup(filePath, backupDir string) error {
 		now.Format("2006"),
 		now.Format("01"),
 		now.Format("02"),
-		filePath,
+		relPath,
 	)
 
 	// Add timestamp to filename

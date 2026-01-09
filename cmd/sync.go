@@ -430,7 +430,7 @@ func processKeepFiles(repoRoot, workspacePath string, keepFiles []string, issues
 		}
 
 		// 5a. Backup original file to backup/modified/
-		if err := backup.CreateFileBackup(filePath, backupDir); err != nil {
+		if err := backup.CreateFileBackup(filePath, backupDir, repoRoot); err != nil {
 			fmt.Printf("        Failed to backup %s: %v\n", file, err)
 			*issues++
 			continue
