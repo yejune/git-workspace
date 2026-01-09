@@ -86,7 +86,7 @@ func Apply(repoPath, patchPath string) error {
 	return nil
 }
 
-// Check checks if applying the patch would cause conflicts using --dry-run.
+// Check checks if applying the patch would cause conflicts using git apply --check.
 // Returns true if conflicts are detected, false otherwise.
 func Check(repoPath, patchPath string) (hasConflicts bool, err error) {
 	if repoPath == "" {
@@ -101,33 +101,11 @@ func Check(repoPath, patchPath string) (hasConflicts bool, err error) {
 		return false, fmt.Errorf("patch file not found: %w", err)
 	}
 
-	// Open patch file
-	patchFile, err := os.Open(patchPath)
-	if err != nil {
-		return false, fmt.Errorf("failed to open patch file: %w", err)
-	}
-	defer patchFile.Close()
-
-	// Run patch with --dry-run to check for conflicts
-	cmd := exec.Command("patch", "--dry-run", "-p1")
-	cmd.Dir = repoPath
-	cmd.Stdin = patchFile
-
-	// Capture output
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		outputStr := string(output)
-
-		// Check if it's actually a conflict (patch can apply but would conflict)
-		// Common conflict indicators in patch output
-		if strings.Contains(outputStr, "FAILED") ||
-			strings.Contains(outputStr, "rejected") ||
-			strings.Contains(outputStr, "Hunk") && strings.Contains(outputStr, "FAILED") {
-			return true, nil // Has conflicts, no error
-		}
-
-		// Other patch errors (malformed patch, file not found, etc.)
-		return false, fmt.Errorf("patch check failed: %s", outputStr)
+	// Use git apply --check to validate patch
+	cmd := exec.Command("git", "-C", repoPath, "apply", "--check", patchPath)
+	if err := cmd.Run(); err != nil {
+		// Non-zero exit means patch cannot be applied (conflicts or errors)
+		return true, nil
 	}
 
 	return false, nil
