@@ -2,8 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/yejune/git-workspace/internal/git"
 	"github.com/yejune/git-workspace/internal/i18n"
@@ -31,6 +34,17 @@ func init() {
 }
 
 func runStatus(cmd *cobra.Command, args []string) error {
+	// Define color printers
+	// Use Fprintf to always print to the correct stdout
+	var (
+		printCyan   = func(format string, a ...interface{}) { color.New(color.FgCyan, color.Bold).Fprintf(os.Stdout, format, a...) }
+		printBlue   = func(format string, a ...interface{}) { color.New(color.FgBlue, color.Bold).Fprintf(os.Stdout, format, a...) }
+		printGreen  = func(format string, a ...interface{}) { color.New(color.FgGreen).Fprintf(os.Stdout, format, a...) }
+		printYellow = func(format string, a ...interface{}) { color.New(color.FgYellow).Fprintf(os.Stdout, format, a...) }
+		printRed    = func(format string, a ...interface{}) { color.New(color.FgRed, color.Bold).Fprintf(os.Stdout, format, a...) }
+		printGray   = func(format string, a ...interface{}) { color.New(color.Faint).Fprintf(os.Stdout, format, a...) }
+	)
+
 	repoRoot, err := git.GetRepoRoot()
 	if err != nil {
 		return fmt.Errorf("not in a git repository: %w", err)
@@ -68,16 +82,23 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		workspacesToProcess = m.Workspaces
 	}
 
-	for _, ws := range workspacesToProcess {
+	for idx, ws := range workspacesToProcess {
+		if idx > 0 {
+			// Add separator between workspaces
+			printGray("%s\n", strings.Repeat("─", 80))
+			fmt.Println()
+		}
+
 		fullPath := filepath.Join(repoRoot, ws.Path)
 
-		fmt.Printf("%s", ws.Path)
+		// Workspace header
+		printCyan("%s", ws.Path)
 
 		if !git.IsRepo(fullPath) {
-			fmt.Printf(" %s\n", i18n.T("not_cloned"))
+			printRed(" %s\n", i18n.T("not_cloned"))
 			fmt.Println()
-			fmt.Printf("  %s\n", i18n.T("how_to_resolve"))
-			fmt.Println("    git workspace sync")
+			printBlue("  %s\n", i18n.T("how_to_resolve"))
+			printGray("    git workspace sync\n")
 			fmt.Println()
 			continue
 		}
@@ -87,11 +108,11 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			branch = "unknown"
 		}
-		fmt.Printf(" (%s):\n", branch)
+		printGray(" (%s)\n", branch)
 		fmt.Println()
 
 		// Section 1: Local Status
-		fmt.Printf("  %s\n", i18n.T("local_status"))
+		printBlue("  %s\n", i18n.T("local_status"))
 
 		modifiedFiles, _ := git.GetModifiedFiles(fullPath)
 		untrackedFiles, _ := git.GetUntrackedFiles(fullPath)
@@ -101,35 +122,35 @@ func runStatus(cmd *cobra.Command, args []string) error {
 
 		if len(modifiedFiles) > 0 {
 			hasLocalChanges = true
-			fmt.Printf("    %s\n", i18n.T("files_modified", len(modifiedFiles)))
+			printYellow("    %s\n", i18n.T("files_modified", len(modifiedFiles)))
 			for _, file := range modifiedFiles {
-				fmt.Printf("      - %s\n", file)
+				printGray("      - %s\n", file)
 			}
 		}
 
 		if len(untrackedFiles) > 0 {
 			hasLocalChanges = true
-			fmt.Printf("    %s\n", i18n.T("files_untracked", len(untrackedFiles)))
+			printYellow("    %s\n", i18n.T("files_untracked", len(untrackedFiles)))
 			for _, file := range untrackedFiles {
-				fmt.Printf("      - %s\n", file)
+				printGray("      - %s\n", file)
 			}
 		}
 
 		if len(stagedFiles) > 0 {
 			hasLocalChanges = true
-			fmt.Printf("    %s\n", i18n.T("files_staged", len(stagedFiles)))
+			printYellow("    %s\n", i18n.T("files_staged", len(stagedFiles)))
 			for _, file := range stagedFiles {
-				fmt.Printf("      - %s\n", file)
+				printGray("      - %s\n", file)
 			}
 		}
 
 		if !hasLocalChanges {
-			fmt.Printf("    %s\n", i18n.T("clean_working_tree"))
+			printGreen("    %s\n", i18n.T("clean_working_tree"))
 		}
 		fmt.Println()
 
 		// Section 2: Remote Status
-		fmt.Printf("  %s\n", i18n.T("remote_status"))
+		printBlue("  %s\n", i18n.T("remote_status"))
 
 		// Fetch from remote (suppress errors)
 		_ = git.Fetch(fullPath)
@@ -138,22 +159,22 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		aheadCount, _ := git.GetAheadCount(fullPath, branch)
 
 		if behindCount > 0 {
-			fmt.Printf("    %s\n", i18n.T("commits_behind", behindCount, branch))
+			printYellow("    %s\n", i18n.T("commits_behind", behindCount, branch))
 		}
 
 		if aheadCount > 0 {
-			fmt.Printf("    %s\n", i18n.T("commits_ahead", aheadCount))
+			printYellow("    %s\n", i18n.T("commits_ahead", aheadCount))
 		}
 
 		if behindCount == 0 && aheadCount == 0 {
-			fmt.Printf("    %s\n", i18n.T("up_to_date"))
+			printGreen("    %s\n", i18n.T("up_to_date"))
 		}
 
 		// Check if remote branch exists
 		if behindCount == 0 && aheadCount == 0 {
 			// Try to verify remote branch exists
 			if err := git.Fetch(fullPath); err != nil {
-				fmt.Printf("    %s\n", i18n.T("cannot_fetch"))
+				printRed("    %s\n", i18n.T("cannot_fetch"))
 			}
 		}
 		fmt.Println()
@@ -162,36 +183,36 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		needsResolution := hasLocalChanges || behindCount > 0 || aheadCount > 0
 
 		if needsResolution {
-			fmt.Printf("  %s\n", i18n.T("how_to_resolve"))
+			printBlue("  %s\n", i18n.T("how_to_resolve"))
 			fmt.Println()
 
 			if hasLocalChanges {
-				fmt.Printf("    %s\n", i18n.T("resolve_commit"))
-				fmt.Printf("       cd %s\n", ws.Path)
+				printYellow("    %s\n", i18n.T("resolve_commit"))
+				printGray("       cd %s\n", ws.Path)
 				if len(stagedFiles) > 0 || len(modifiedFiles) > 0 {
-					fmt.Println("       git add .")
-					fmt.Println("       git commit -m \"your message\"")
+					printGray("       git add .\n")
+					printGray("       git commit -m \"your message\"\n")
 				}
 				if len(untrackedFiles) > 0 {
-					fmt.Printf("       %s\n", i18n.T("resolve_or_gitignore"))
+					printGray("       %s\n", i18n.T("resolve_or_gitignore"))
 				}
 				fmt.Println()
 			}
 
 			if behindCount > 0 {
-				fmt.Printf("    %s\n", i18n.T("resolve_pull"))
-				fmt.Printf("       git workspace pull %s\n", ws.Path)
+				printYellow("    %s\n", i18n.T("resolve_pull"))
+				printGray("       git workspace pull %s\n", ws.Path)
 				fmt.Println()
 			}
 
 			if aheadCount > 0 {
-				fmt.Printf("    %s\n", i18n.T("resolve_push"))
-				fmt.Printf("       cd %s\n", ws.Path)
-				fmt.Println("       git push")
+				printYellow("    %s\n", i18n.T("resolve_push"))
+				printGray("       cd %s\n", ws.Path)
+				printGray("       git push\n")
 				fmt.Println()
 			}
 		} else {
-			fmt.Printf("  %s\n", i18n.T("no_action_needed"))
+			printGreen("  %s\n", i18n.T("no_action_needed"))
 			fmt.Println()
 		}
 	}
