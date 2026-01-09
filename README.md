@@ -107,7 +107,7 @@ git workspace clone git@github.com:user/repo.git
 
 ### `git workspace clone [url] [path]`
 
-Clone a repository as a sub (default command).
+Clone a repository as a workspace (default command).
 
 ```bash
 git workspace clone https://github.com/user/lib.git              # -> ./lib/
@@ -117,13 +117,13 @@ git workspace clone -b develop git@github.com:user/lib.git       # specific bran
 
 ### `git workspace sync`
 
-Auto-discover subs or sync from .git.workspaces. Has two modes:
+Auto-discover workspaces or sync from .git.workspaces. Has two modes:
 
 **Mode 1: Discovery Mode** (no .git.workspaces)
 ```bash
 # Situation: .git.workspaces doesn't exist
-packages/lib/.git/      # existing sub
-packages/utils/.git/    # existing sub
+packages/lib/.git/      # existing workspace
+packages/utils/.git/    # existing workspace
 
 git workspace sync
 # → Recursively scans directories
@@ -149,24 +149,57 @@ git workspace sync
 
 ### `git workspace list`
 
-List all registered subs.
+List all registered workspaces.
 
 ```bash
-git workspace list    # list subs
+git workspace list    # list workspaces
 git workspace ls      # alias
 ```
 
 ### `git workspace status`
 
-Show detailed status of all subs.
+Show detailed status of all workspaces.
 
 ```bash
 git workspace status  # shows branch, commits ahead/behind, modified files
 ```
 
+### `git workspace branch [workspace-path]`
+
+Show or switch branches of workspaces.
+
+```bash
+git workspace branch                    # show all workspace branches
+git workspace branch packages/lib       # show branch of specific workspace
+git workspace branch -b feature/new     # create and switch to new branch in all workspaces
+```
+
+### `git workspace pull [workspace-path]`
+
+Pull latest changes from remote for workspaces.
+
+```bash
+git workspace pull                      # pull all workspaces
+git workspace pull packages/lib         # pull specific workspace
+# Automatically handles keep files with patch application
+# See "How It Works: Sync & Pull Workflow" for details
+```
+
+### `git workspace reset`
+
+Reset skip-worktree flags and restore files to HEAD state.
+
+```bash
+git workspace reset                     # reset all (skip + ignore)
+git workspace reset skip                # reset skip-worktree only
+git workspace reset ignore              # reset ignore patterns only
+# Creates backup before resetting
+# See "Command Workflows: Complete Reference" for details
+```
+
 ### `git workspace remove [path]`
 
-Remove a sub.
+Remove a workspace.
 
 ```bash
 git workspace remove packages/lib              # remove and delete files
@@ -583,26 +616,26 @@ tar -xzf .workspaces/backup/archived/2025-12-modified.tar.gz \
 ```
 my-project/
 ├── .git/                    <- Parent project git
-├── .git.workspaces          <- Sub manifest (tracked by parent)
+├── .git.workspaces          <- Workspace manifest (tracked by parent)
 ├── .gitignore               <- Contains "packages/lib/.git/"
 ├── src/
 │   └── main.go
 └── packages/
     └── lib/
-        ├── .git/            <- Sub's independent git
+        ├── .git/            <- Workspace's independent git
         └── lib.go           <- Tracked by BOTH repos
 ```
 
 ### Key Points
 
-1. **Independent Git**: Each sub has its own `.git` directory (local only)
-2. **Source Tracking**: Parent tracks sub's source files (not `.git`)
+1. **Independent Git**: Each workspace has its own `.git` directory (local only)
+2. **Source Tracking**: Parent tracks workspace's source files (not `.git`)
 3. **Direct Push**: `cd packages/lib && git push` works as expected
-4. **Manifest File**: `.git.workspaces` records all subs for recreation
+4. **Manifest File**: `.git.workspaces` records all workspaces for recreation
 
 ### Workflow
 
-**Developer A adds a sub:**
+**Developer A adds a workspace:**
 ```bash
 git workspace clone https://github.com/user/lib.git packages/lib
 # Creates: packages/lib/.git/ (local)
@@ -611,11 +644,11 @@ git workspace clone https://github.com/user/lib.git packages/lib
 # Records: path, repo, commit hash → .git.workspaces
 
 git add .
-git commit -m "Add lib sub"
+git commit -m "Add lib workspace"
 git push  # Pushes: source files + .git.workspaces (NOT .git)
 ```
 
-**Developer A updates sub:**
+**Developer A updates workspace:**
 ```bash
 cd packages/lib
 git commit && git push  # ← Must push to remote!
