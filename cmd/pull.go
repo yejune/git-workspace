@@ -101,9 +101,27 @@ func runPull(cmd *cobra.Command, args []string) error {
 		}
 
 		// Count uncommitted files
-		modifiedFiles, _ := git.GetModifiedFiles(fullPath)
-		untrackedFiles, _ := git.GetUntrackedFiles(fullPath)
-		stagedFiles, _ := git.GetStagedFiles(fullPath)
+		modifiedFiles, err := git.GetModifiedFiles(fullPath)
+		if err != nil {
+			fmt.Printf("%s:\n", workspace.Path)
+			fmt.Printf("  Failed to get modified files: %v\n", err)
+			fmt.Println()
+			continue
+		}
+		untrackedFiles, err := git.GetUntrackedFiles(fullPath)
+		if err != nil {
+			fmt.Printf("%s:\n", workspace.Path)
+			fmt.Printf("  Failed to get untracked files: %v\n", err)
+			fmt.Println()
+			continue
+		}
+		stagedFiles, err := git.GetStagedFiles(fullPath)
+		if err != nil {
+			fmt.Printf("%s:\n", workspace.Path)
+			fmt.Printf("  Failed to get staged files: %v\n", err)
+			fmt.Println()
+			continue
+		}
 		totalUncommitted := len(modifiedFiles) + len(untrackedFiles) + len(stagedFiles)
 
 		// Show current status
@@ -140,7 +158,7 @@ func runPull(cmd *cobra.Command, args []string) error {
 		// Handle keep files before pulling
 		keepFiles := workspace.Keep
 		if len(keepFiles) > 0 {
-			if err := handleKeepFiles(fullPath, branch, keepFiles, repoRoot); err != nil {
+			if err := handleKeepFiles(fullPath, branch, keepFiles, repoRoot, workspace.Path); err != nil {
 				fmt.Printf("  Keep file handling failed: %v\n", err)
 				fmt.Println()
 				continue
@@ -173,7 +191,20 @@ func runPull(cmd *cobra.Command, args []string) error {
 }
 
 // handleKeepFiles handles keep files with remote changes interactively
-func handleKeepFiles(wsPath, branch string, keepFiles []string, repoRoot string) error {
+func handleKeepFiles(wsPath, branch string, keepFiles []string, repoRoot string, workspacePath string) error {
+	// CRITICAL: Unskip-worktree before git operations
+	// Philosophy: "Skip-worktree workflow" - unskip → work → skip
+	if err := git.UnapplySkipWorktree(wsPath, keepFiles); err != nil {
+		return fmt.Errorf("failed to unskip-worktree before operations: %w", err)
+	}
+
+	// Ensure we re-skip at the end, even on error
+	defer func() {
+		if err := git.ApplySkipWorktree(wsPath, keepFiles); err != nil {
+			fmt.Printf("  ⚠ Failed to re-apply skip-worktree: %v\n", err)
+		}
+	}()
+
 	for _, file := range keepFiles {
 		// Check if file has remote changes
 		hasChanges, err := git.HasRemoteChanges(wsPath, file, branch)
@@ -185,8 +216,8 @@ func handleKeepFiles(wsPath, branch string, keepFiles []string, repoRoot string)
 			continue // No remote changes, skip
 		}
 
-		// Create temporary patch directory
-		patchDir := filepath.Join(wsPath, ".git", "git-workspace", "patches")
+		// Create patch directory in .workspaces/patches/{workspace-path}/
+		patchDir := filepath.Join(repoRoot, ".workspaces", "patches", workspacePath)
 		if err := os.MkdirAll(patchDir, 0755); err != nil {
 			return fmt.Errorf("failed to create patch directory: %w", err)
 		}
