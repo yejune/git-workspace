@@ -531,7 +531,7 @@ func TestSyncEmpty(t *testing.T) {
 			runSync(syncCmd, []string{})
 		})
 
-		if !strings.Contains(output, "No sub repositories found") || !strings.Contains(output, "No .workspaces found") {
+		if !strings.Contains(output, "No workspace repositories found") || !strings.Contains(output, "No .workspaces found") {
 			t.Errorf("should show no subclones message, got: %s", output)
 		}
 	})
