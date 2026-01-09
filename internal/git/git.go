@@ -357,38 +357,18 @@ func ApplySkipWorktree(repoPath string, files []string) error {
 	var failed []string
 
 	for _, file := range files {
-		// Check if file exists
-		fullPath := filepath.Join(repoPath, file)
-		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-			failed = append(failed, fmt.Sprintf("%s (file not found)", file))
-			continue
-		}
-
-		// Check if file is tracked by git
-		cmd := exec.Command("git", "-C", repoPath, "ls-files", file)
-		out, err := cmd.Output()
-		if err != nil || strings.TrimSpace(string(out)) == "" {
-			failed = append(failed, fmt.Sprintf("%s (not tracked by git)", file))
-			continue
-		}
-
 		// Check if already skip-worktree
-		cmd = exec.Command("git", "-C", repoPath, "ls-files", "-v", file)
-		out, err = cmd.Output()
-		if err != nil {
-			failed = append(failed, fmt.Sprintf("%s (ls-files failed)", file))
+		cmd := exec.Command("git", "-C", repoPath, "ls-files", "-v", file)
+		out, err := cmd.Output()
+		if err == nil && len(out) > 0 && out[0] == 'S' {
+			// Already skip-worktree, skip
 			continue
 		}
 
-		// If starts with 'S', already skip-worktree
-		if len(out) > 0 && out[0] == 'S' {
-			continue
-		}
-
-		// Apply skip-worktree
+		// Apply skip-worktree - let git tell us if file doesn't exist or isn't tracked
 		cmd = exec.Command("git", "-C", repoPath, "update-index", "--skip-worktree", file)
 		if err := cmd.Run(); err != nil {
-			failed = append(failed, fmt.Sprintf("%s (update-index failed: %v)", file, err))
+			failed = append(failed, fmt.Sprintf("%s (%v)", file, err))
 		}
 	}
 
