@@ -354,18 +354,29 @@ func ApplySkipWorktree(repoPath string, files []string) error {
 		return nil
 	}
 
+	var failed []string
+
 	for _, file := range files {
 		// Check if file exists
 		fullPath := filepath.Join(repoPath, file)
 		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-			// File doesn't exist, skip
+			failed = append(failed, fmt.Sprintf("%s (file not found)", file))
+			continue
+		}
+
+		// Check if file is tracked by git
+		cmd := exec.Command("git", "-C", repoPath, "ls-files", file)
+		out, err := cmd.Output()
+		if err != nil || strings.TrimSpace(string(out)) == "" {
+			failed = append(failed, fmt.Sprintf("%s (not tracked by git)", file))
 			continue
 		}
 
 		// Check if already skip-worktree
-		cmd := exec.Command("git", "-C", repoPath, "ls-files", "-v", file)
-		out, err := cmd.Output()
+		cmd = exec.Command("git", "-C", repoPath, "ls-files", "-v", file)
+		out, err = cmd.Output()
 		if err != nil {
+			failed = append(failed, fmt.Sprintf("%s (ls-files failed)", file))
 			continue
 		}
 
@@ -377,8 +388,12 @@ func ApplySkipWorktree(repoPath string, files []string) error {
 		// Apply skip-worktree
 		cmd = exec.Command("git", "-C", repoPath, "update-index", "--skip-worktree", file)
 		if err := cmd.Run(); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to apply skip-worktree to %s: %v\n", file, err)
+			failed = append(failed, fmt.Sprintf("%s (update-index failed: %v)", file, err))
 		}
+	}
+
+	if len(failed) > 0 {
+		return fmt.Errorf("failed to apply skip-worktree to %d file(s):\n  - %s", len(failed), strings.Join(failed, "\n  - "))
 	}
 
 	return nil
@@ -390,12 +405,24 @@ func UnapplySkipWorktree(repoPath string, files []string) error {
 		return nil
 	}
 
+	var failed []string
+
 	for _, file := range files {
 		cmd := exec.Command("git", "-C", repoPath, "update-index", "--no-skip-worktree", file)
 		if err := cmd.Run(); err != nil {
-			// Ignore errors (file might not be tracked)
-			continue
+			// Check if file is tracked
+			checkCmd := exec.Command("git", "-C", repoPath, "ls-files", file)
+			out, checkErr := checkCmd.Output()
+			if checkErr != nil || strings.TrimSpace(string(out)) == "" {
+				// File not tracked, silently skip
+				continue
+			}
+			failed = append(failed, fmt.Sprintf("%s (%v)", file, err))
 		}
+	}
+
+	if len(failed) > 0 {
+		return fmt.Errorf("failed to unapply skip-worktree from %d file(s):\n  - %s", len(failed), strings.Join(failed, "\n  - "))
 	}
 
 	return nil

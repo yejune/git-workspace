@@ -140,7 +140,7 @@ func runPull(cmd *cobra.Command, args []string) error {
 		// Handle keep files before pulling
 		keepFiles := workspace.Keep
 		if len(keepFiles) > 0 {
-			if err := handleKeepFiles(fullPath, branch, keepFiles); err != nil {
+			if err := handleKeepFiles(fullPath, branch, keepFiles, repoRoot); err != nil {
 				fmt.Printf("  Keep file handling failed: %v\n", err)
 				fmt.Println()
 				continue
@@ -173,7 +173,7 @@ func runPull(cmd *cobra.Command, args []string) error {
 }
 
 // handleKeepFiles handles keep files with remote changes interactively
-func handleKeepFiles(wsPath, branch string, keepFiles []string) error {
+func handleKeepFiles(wsPath, branch string, keepFiles []string, repoRoot string) error {
 	for _, file := range keepFiles {
 		// Check if file has remote changes
 		hasChanges, err := git.HasRemoteChanges(wsPath, file, branch)
@@ -208,10 +208,9 @@ func handleKeepFiles(wsPath, branch string, keepFiles []string) error {
 			switch choice {
 			case 0: // Update origin and reapply patch (recommended)
 				// Backup original file
-				backupDir := filepath.Join(filepath.Dir(wsPath), ".workspaces", "backup")
-				if err := backup.CreateFileBackup(filepath.Join(wsPath, file), backupDir, filepath.Dir(wsPath)); err != nil {
-					fmt.Printf("  ⚠ Backup failed: %v\n", err)
-					continue
+				backupDir := filepath.Join(repoRoot, ".workspaces", "backup")
+				if err := backup.CreateFileBackup(filepath.Join(wsPath, file), backupDir, repoRoot); err != nil {
+					return fmt.Errorf("backup failed for %s: %w", file, err)
 				}
 
 				// Create patch from current local changes

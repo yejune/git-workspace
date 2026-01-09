@@ -51,11 +51,15 @@ func runReset(cmd *cobra.Command, args []string) error {
 
 		// 백업
 		for _, file := range m.Keep {
-			backup.CreateFileBackup(filepath.Join(repoRoot, file), backupDir, repoRoot)
+			if err := backup.CreateFileBackup(filepath.Join(repoRoot, file), backupDir, repoRoot); err != nil {
+				return fmt.Errorf("failed to backup %s: %w", file, err)
+			}
 		}
 
 		// Unskip
-		git.UnapplySkipWorktree(repoRoot, m.Keep)
+		if err := git.UnapplySkipWorktree(repoRoot, m.Keep); err != nil {
+			return fmt.Errorf("failed to unapply skip-worktree: %w", err)
+		}
 
 		fmt.Printf("  ✓ Unskipped %d keep files\n", len(m.Keep))
 
@@ -72,11 +76,15 @@ func runReset(cmd *cobra.Command, args []string) error {
 
 			// 백업
 			for _, file := range ws.Keep {
-				backup.CreateFileBackup(filepath.Join(fullPath, file), backupDir, repoRoot)
+				if err := backup.CreateFileBackup(filepath.Join(fullPath, file), backupDir, repoRoot); err != nil {
+					return fmt.Errorf("failed to backup %s: %w", file, err)
+				}
 			}
 
 			// Unskip
-			git.UnapplySkipWorktree(fullPath, ws.Keep)
+			if err := git.UnapplySkipWorktree(fullPath, ws.Keep); err != nil {
+				return fmt.Errorf("failed to unapply skip-worktree in %s: %w", ws.Path, err)
+			}
 
 			fmt.Printf("  ✓ Unskipped %d keep files\n", len(ws.Keep))
 

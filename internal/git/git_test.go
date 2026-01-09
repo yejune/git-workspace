@@ -371,7 +371,7 @@ func TestInitRepo(t *testing.T) {
 		// Create a test file in the target directory (simulating tracked files)
 		os.WriteFile(filepath.Join(repoDir, "README.md"), []byte("# Test"), 0644)
 
-		err := InitRepo(repoDir, sourceDir, "", "")
+		err := InitRepo(repoDir, sourceDir, "")
 		if err != nil {
 			t.Fatalf("InitRepo failed: %v", err)
 		}
@@ -397,7 +397,7 @@ func TestInitRepo(t *testing.T) {
 		// Create a test file in the target directory
 		os.WriteFile(filepath.Join(repoDir, "README.md"), []byte("# Test"), 0644)
 
-		err := InitRepo(repoDir, sourceDir, "", "")
+		err := InitRepo(repoDir, sourceDir, "")
 		if err != nil {
 			t.Fatalf("InitRepo with empty branch failed: %v", err)
 		}
@@ -516,7 +516,7 @@ func TestRemoveFromGitignore_ErrorCases(t *testing.T) {
 
 func TestInitRepo_ErrorCases(t *testing.T) {
 	t.Run("init fails on non-existent path", func(t *testing.T) {
-		err := InitRepo("/non/existent/path", "https://example.com/repo.git", "main", "")
+		err := InitRepo("/non/existent/path", "https://example.com/repo.git", "main")
 		if err == nil {
 			t.Error("should error when path doesn't exist")
 		}
@@ -538,10 +538,10 @@ func TestInitRepo_ErrorCases(t *testing.T) {
 		exec.Command("git", "init", "--bare", remoteDir).Run()
 
 		// Init once
-		InitRepo(repoDir, remoteDir, "main", "")
+		InitRepo(repoDir, remoteDir, "main")
 
 		// Second init with same remote should fail on remote add
-		err := InitRepo(repoDir, "https://other.com/repo.git", "main", "")
+		err := InitRepo(repoDir, "https://other.com/repo.git", "main")
 		if err == nil {
 			t.Error("should error when remote already exists")
 		}
@@ -553,7 +553,7 @@ func TestInitRepo_ErrorCases(t *testing.T) {
 		os.MkdirAll(repoDir, 0755)
 
 		// Use a clearly invalid remote URL that git fetch will fail on
-		err := InitRepo(repoDir, "file:///non/existent/remote", "main", "")
+		err := InitRepo(repoDir, "file:///non/existent/remote", "main")
 		if err == nil {
 			t.Error("should error when fetch fails")
 		}

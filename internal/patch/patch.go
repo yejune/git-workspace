@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 // Create creates a patch file from the diff between HEAD and working tree
@@ -115,8 +116,18 @@ func Check(repoPath, patchPath string) (hasConflicts bool, err error) {
 	// Capture output
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		// Non-zero exit code indicates conflicts or other issues
-		return true, fmt.Errorf("patch check failed (conflicts detected): %s", output)
+		outputStr := string(output)
+
+		// Check if it's actually a conflict (patch can apply but would conflict)
+		// Common conflict indicators in patch output
+		if strings.Contains(outputStr, "FAILED") ||
+			strings.Contains(outputStr, "rejected") ||
+			strings.Contains(outputStr, "Hunk") && strings.Contains(outputStr, "FAILED") {
+			return true, nil // Has conflicts, no error
+		}
+
+		// Other patch errors (malformed patch, file not found, etc.)
+		return false, fmt.Errorf("patch check failed: %s", outputStr)
 	}
 
 	return false, nil

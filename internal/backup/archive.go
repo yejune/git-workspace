@@ -1,11 +1,12 @@
 package backup
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -135,33 +136,116 @@ func archiveBackupType(backupDir, backupType, currentYear, currentMonth string) 
 	return nil
 }
 
-// createTarGz creates a tar.gz archive from a directory
+// createTarGz creates a tar.gz archive from a directory using native Go
 func createTarGz(baseDir, archivePath, year, month string) error {
-	// Change to base directory and tar relative path
-	// This preserves the YYYY/MM directory structure in the archive
-	cmd := exec.Command("tar", "-czf", archivePath, "-C", baseDir, filepath.Join(year, month))
+	srcDir := filepath.Join(baseDir, year, month)
 
-	// Capture both stdout and stderr
-	output, err := cmd.CombinedOutput()
+	// Create archive file
+	archiveFile, err := os.Create(archivePath)
 	if err != nil {
-		return fmt.Errorf("tar command failed: %w\nOutput: %s", err, string(output))
+		return fmt.Errorf("failed to create archive file: %w", err)
+	}
+	defer archiveFile.Close()
+
+	// Create gzip writer
+	gzipWriter := gzip.NewWriter(archiveFile)
+	defer gzipWriter.Close()
+
+	// Create tar writer
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
+
+	// Walk directory and add files to tar
+	err = filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Get relative path from baseDir (preserves YYYY/MM structure)
+		relPath, err := filepath.Rel(baseDir, path)
+		if err != nil {
+			return err
+		}
+
+		// Create tar header
+		header, err := tar.FileInfoHeader(info, "")
+		if err != nil {
+			return fmt.Errorf("failed to create tar header for %s: %w", path, err)
+		}
+
+		// Use relative path as name
+		header.Name = filepath.ToSlash(relPath)
+
+		// Write header
+		if err := tarWriter.WriteHeader(header); err != nil {
+			return fmt.Errorf("failed to write tar header: %w", err)
+		}
+
+		// Write file contents if not directory
+		if !info.IsDir() {
+			file, err := os.Open(path)
+			if err != nil {
+				return fmt.Errorf("failed to open file %s: %w", path, err)
+			}
+			defer file.Close()
+
+			if _, err := io.Copy(tarWriter, file); err != nil {
+				return fmt.Errorf("failed to write file %s to tar: %w", path, err)
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to create tar archive: %w", err)
 	}
 
 	return nil
 }
 
-// verifyTarGz verifies the integrity of a tar.gz archive
+// verifyTarGz verifies the integrity of a tar.gz archive using native Go
 func verifyTarGz(archivePath string) error {
-	cmd := exec.Command("tar", "-tzf", archivePath)
-
-	// Capture output
-	output, err := cmd.CombinedOutput()
+	// Open archive file
+	archiveFile, err := os.Open(archivePath)
 	if err != nil {
-		return fmt.Errorf("verification command failed: %w\nOutput: %s", err, string(output))
+		return fmt.Errorf("failed to open archive: %w", err)
+	}
+	defer archiveFile.Close()
+
+	// Create gzip reader
+	gzipReader, err := gzip.NewReader(archiveFile)
+	if err != nil {
+		return fmt.Errorf("failed to create gzip reader: %w", err)
+	}
+	defer gzipReader.Close()
+
+	// Create tar reader
+	tarReader := tar.NewReader(gzipReader)
+
+	// Read all entries to verify archive structure
+	fileCount := 0
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break // End of archive
+		}
+		if err != nil {
+			return fmt.Errorf("failed to read tar entry: %w", err)
+		}
+
+		fileCount++
+
+		// Try to read file contents to verify integrity
+		if !header.FileInfo().IsDir() {
+			// Just consume the data without storing it
+			if _, err := io.Copy(io.Discard, tarReader); err != nil {
+				return fmt.Errorf("failed to verify file %s: %w", header.Name, err)
+			}
+		}
 	}
 
-	// Check if output contains files
-	if strings.TrimSpace(string(output)) == "" {
+	if fileCount == 0 {
 		return fmt.Errorf("archive is empty")
 	}
 

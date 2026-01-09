@@ -135,7 +135,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// copyDirectory recursively copies directory
+// copyDirectory recursively copies directory, excluding .git
 func copyDirectory(src, dst string) error {
 	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -146,6 +146,12 @@ func copyDirectory(src, dst string) error {
 		if err != nil {
 			return err
 		}
+
+		// Skip .git directory (saves disk space and time)
+		if info.IsDir() && info.Name() == ".git" {
+			return filepath.SkipDir
+		}
+
 		dstPath := filepath.Join(dst, relPath)
 
 		if info.IsDir() {
