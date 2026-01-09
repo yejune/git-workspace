@@ -344,7 +344,7 @@ func TestRunPush(t *testing.T) {
 			runPush(pushCmd, []string{})
 		})
 
-		if !strings.Contains(output, "Pushing") && !strings.Contains(output, "No subclones") {
+		if !strings.Contains(output, "Pushing") && !strings.Contains(output, "No workspaces") {
 			t.Log("push all executed")
 		}
 	})
@@ -501,7 +501,7 @@ func TestListEmpty(t *testing.T) {
 			runList(listCmd, []string{})
 		})
 
-		if !strings.Contains(output, "No subclones") {
+		if !strings.Contains(output, "No workspaces") {
 			t.Errorf("should show no subclones message, got: %s", output)
 		}
 	})
@@ -516,7 +516,7 @@ func TestStatusEmpty(t *testing.T) {
 			runStatus(statusCmd, []string{})
 		})
 
-		if !strings.Contains(output, "No subclones") {
+		if !strings.Contains(output, "No workspaces") {
 			t.Errorf("should show no subclones message, got: %s", output)
 		}
 	})
@@ -531,7 +531,7 @@ func TestSyncEmpty(t *testing.T) {
 			runSync(syncCmd, []string{})
 		})
 
-		if !strings.Contains(output, "No subclones") {
+		if !strings.Contains(output, "No workspaces") {
 			t.Errorf("should show no subclones message, got: %s", output)
 		}
 	})
@@ -900,7 +900,7 @@ func TestPushAllSkipsNotCloned(t *testing.T) {
 		})
 
 		// Should show "No subclones needed pushing" since the only one isn't cloned
-		if !strings.Contains(output, "No subclones") {
+		if !strings.Contains(output, "No workspaces") {
 			t.Errorf("should show 'No subclones needed pushing', got: %s", output)
 		}
 	})
@@ -2180,7 +2180,7 @@ func TestRootCmdExecute(t *testing.T) {
 		})
 
 		// Should show no subclones message
-		if !strings.Contains(output, "No subclones") {
+		if !strings.Contains(output, "No workspaces") {
 			t.Logf("output: %s", output)
 		}
 	})

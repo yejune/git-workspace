@@ -60,8 +60,8 @@ func runSync(cmd *cobra.Command, args []string) error {
 	}
 
 	// 2. Load manifest
-	if err != nil || len(m.Workspaces) == 0 {
-		// No manifest or empty - scan directories for existing workspaces
+	if err != nil {
+		// No manifest - scan directories for existing workspaces
 		fmt.Println(i18n.T("no_gitsubs_found"))
 		discovered, scanErr := scanForWorkspaces(repoRoot)
 		if scanErr != nil {
