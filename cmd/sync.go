@@ -59,34 +59,42 @@ func runSync(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// 2. Load manifest
+	// 2. Handle manifest load error
 	if err != nil {
-		// No manifest - scan directories for existing workspaces
+		// manifest.Load only returns error if file is corrupted or has read error
+		// (it returns empty manifest with no error if file doesn't exist)
+		return fmt.Errorf("failed to load manifest: %w", err)
+	}
+
+	// 3. If no workspaces in manifest, scan for existing sub repos
+	if len(m.Workspaces) == 0 {
 		fmt.Println(i18n.T("no_gitsubs_found"))
 		discovered, scanErr := scanForWorkspaces(repoRoot)
 		if scanErr != nil {
 			return fmt.Errorf(i18n.T("failed_scan"), scanErr)
 		}
 
-		if len(discovered) == 0 {
+		if len(discovered) > 0 {
+			// Create manifest from discovered workspaces
+			m = &manifest.Manifest{
+				Workspaces: discovered,
+				Ignore:     m.Ignore, // Preserve ignore patterns
+				Keep:       m.Keep,   // Preserve keep files
+			}
+
+			if err := manifest.Save(repoRoot, m); err != nil {
+				return fmt.Errorf("failed to save manifest: %w", err)
+			}
+
+			fmt.Printf(i18n.T("created_gitsubs", len(discovered)))
+			for _, ws := range discovered {
+				fmt.Printf("  - %s (%s)\n", ws.Path, ws.Repo)
+			}
+		} else {
 			fmt.Println(i18n.T("no_subs_found"))
 			fmt.Println(i18n.T("to_add_sub"))
 			fmt.Println(i18n.T("cmd_git_sub_clone"))
-			return nil
-		}
-
-		// Create manifest from discovered workspaces
-		m = &manifest.Manifest{
-			Workspaces: discovered,
-		}
-
-		if err := manifest.Save(repoRoot, m); err != nil {
-			return fmt.Errorf("failed to save manifest: %w", err)
-		}
-
-		fmt.Printf(i18n.T("created_gitsubs", len(discovered)))
-		for _, ws := range discovered {
-			fmt.Printf("  - %s (%s)\n", ws.Path, ws.Repo)
+			// Don't return - continue to apply ignore patterns and keep files
 		}
 	}
 

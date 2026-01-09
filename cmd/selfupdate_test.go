@@ -131,8 +131,8 @@ func TestRunSelfupdate(t *testing.T) {
 			}
 		})
 
-		if !strings.Contains(output, "New version available") {
-			t.Errorf("expected 'New version available', got: %s", output)
+		if !strings.Contains(output, "Latest version:") {
+			t.Errorf("expected 'Latest version:', got: %s", output)
 		}
 	})
 

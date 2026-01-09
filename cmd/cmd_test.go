@@ -199,7 +199,7 @@ func TestRunStatus(t *testing.T) {
 		if !strings.Contains(output, "packages/status-test") {
 			t.Errorf("output should contain subclone path, got: %s", output)
 		}
-		if !strings.Contains(output, "clean") {
+		if !strings.Contains(output, "Clean") {
 			t.Errorf("output should show clean status, got: %s", output)
 		}
 	})
@@ -501,7 +501,7 @@ func TestListEmpty(t *testing.T) {
 			runList(listCmd, []string{})
 		})
 
-		if !strings.Contains(output, "No workspaces") {
+		if !strings.Contains(output, "No workspaces registered") {
 			t.Errorf("should show no subclones message, got: %s", output)
 		}
 	})
@@ -516,7 +516,7 @@ func TestStatusEmpty(t *testing.T) {
 			runStatus(statusCmd, []string{})
 		})
 
-		if !strings.Contains(output, "No workspaces") {
+		if !strings.Contains(output, "No workspaces registered") {
 			t.Errorf("should show no subclones message, got: %s", output)
 		}
 	})
@@ -531,7 +531,7 @@ func TestSyncEmpty(t *testing.T) {
 			runSync(syncCmd, []string{})
 		})
 
-		if !strings.Contains(output, "No workspaces") {
+		if !strings.Contains(output, "No sub repositories found") || !strings.Contains(output, "No .workspaces found") {
 			t.Errorf("should show no subclones message, got: %s", output)
 		}
 	})
@@ -919,7 +919,7 @@ func TestRemoveWithManifestSaveError(t *testing.T) {
 	runClone(cloneCmd, []string{remoteRepo, "packages/remove-error"})
 
 	// Make manifest file read-only
-	manifestPath := filepath.Join(dir, ".workspaces")
+	manifestPath := filepath.Join(dir, ".git.workspaces")
 	os.Chmod(manifestPath, 0444)
 	defer os.Chmod(manifestPath, 0644) // Restore for cleanup
 
@@ -1296,7 +1296,7 @@ func TestRemoveGitignoreError(t *testing.T) {
 
 		output := captureOutput(func() {
 			// This test needs manifest to be writable
-			manifestPath := filepath.Join(dir, ".workspaces")
+			manifestPath := filepath.Join(dir, ".git.workspaces")
 			os.Chmod(manifestPath, 0644)
 
 			// Need to reload after chmod
@@ -1391,7 +1391,7 @@ func TestPushAllWithPushError(t *testing.T) {
 // 	manifest.Save(dir, m)
 // 
 // 	// Make manifest read-only
-// 	manifestPath := filepath.Join(dir, ".workspaces")
+// 	manifestPath := filepath.Join(dir, ".git.workspaces")
 // 	os.Chmod(manifestPath, 0444)
 // 	defer os.Chmod(manifestPath, 0644)
 // 
@@ -1465,7 +1465,7 @@ func TestRootWithManifestSaveError(t *testing.T) {
 	manifest.Save(dir, m)
 
 	// Make manifest read-only
-	manifestPath := filepath.Join(dir, ".workspaces")
+	manifestPath := filepath.Join(dir, ".git.workspaces")
 	os.Chmod(manifestPath, 0444)
 	defer os.Chmod(manifestPath, 0644)
 
@@ -1516,7 +1516,7 @@ func TestListDirWithManifestLoadError(t *testing.T) {
 	defer cleanup()
 
 	// Create invalid manifest
-	manifestPath := filepath.Join(dir, ".workspaces")
+	manifestPath := filepath.Join(dir, ".git.workspaces")
 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 
 	t.Run("listDir with manifest load error", func(t *testing.T) {
@@ -1533,7 +1533,7 @@ func TestSyncDirWithManifestLoadError(t *testing.T) {
 	defer cleanup()
 
 	// Create invalid manifest
-	manifestPath := filepath.Join(dir, ".workspaces")
+	manifestPath := filepath.Join(dir, ".git.workspaces")
 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 
 	t.Run("syncDir with manifest load error", func(t *testing.T) {
@@ -1550,7 +1550,7 @@ func TestStatusWithManifestLoadError(t *testing.T) {
 	defer cleanup()
 
 	// Create invalid manifest
-	manifestPath := filepath.Join(dir, ".workspaces")
+	manifestPath := filepath.Join(dir, ".git.workspaces")
 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 
 	t.Run("status with manifest load error", func(t *testing.T) {
@@ -1569,7 +1569,7 @@ func TestPushWithManifestLoadError(t *testing.T) {
 	defer cleanup()
 
 	// Create invalid manifest
-	manifestPath := filepath.Join(dir, ".workspaces")
+	manifestPath := filepath.Join(dir, ".git.workspaces")
 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 
 	t.Run("push with manifest load error", func(t *testing.T) {
@@ -1590,7 +1590,7 @@ func TestRemoveWithManifestLoadError(t *testing.T) {
 	defer cleanup()
 
 	// Create invalid manifest
-	manifestPath := filepath.Join(dir, ".workspaces")
+	manifestPath := filepath.Join(dir, ".git.workspaces")
 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 
 	t.Run("remove with manifest load error", func(t *testing.T) {
@@ -1611,7 +1611,7 @@ func TestRootWithManifestLoadError(t *testing.T) {
 	remoteRepo := setupRemoteRepo(t)
 
 	// Create invalid manifest
-	manifestPath := filepath.Join(dir, ".workspaces")
+	manifestPath := filepath.Join(dir, ".git.workspaces")
 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 
 	t.Run("root with manifest load error", func(t *testing.T) {
@@ -1634,7 +1634,7 @@ func TestRootWithManifestLoadError(t *testing.T) {
 // 	remoteRepo := setupRemoteRepo(t)
 // 
 // 	// Create invalid manifest
-// 	manifestPath := filepath.Join(dir, ".workspaces")
+// 	manifestPath := filepath.Join(dir, ".git.workspaces")
 // 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 // 
 // 	t.Run("add with manifest load error", func(t *testing.T) {

@@ -19,7 +19,7 @@ var messages = map[string]map[string]string{
 		"not_git_repo":        "→ Not a git repository, skipping",
 		"failed_get_branch":   "✗ Failed to get branch: %v",
 		"failed_read_input":   "✗ Failed to read input: %v",
-		"no_subs_registered":  "No subs registered",
+		"no_subs_registered":  "No workspaces registered",
 		"sub_not_found":       "sub not found: %s",
 
 		// Status command
@@ -109,7 +109,7 @@ var messages = map[string]map[string]string{
 		"not_git_repo":        "→ git 저장소가 아님, 건너뜀",
 		"failed_get_branch":   "✗ 브랜치 확인 실패: %v",
 		"failed_read_input":   "✗ 입력 읽기 실패: %v",
-		"no_subs_registered":  "등록된 sub이 없습니다",
+		"no_subs_registered":  "등록된 workspace가 없습니다",
 		"sub_not_found":       "sub을 찾을 수 없음: %s",
 
 		// Status command
