@@ -410,13 +410,6 @@ func UnapplySkipWorktree(repoPath string, files []string) error {
 	for _, file := range files {
 		cmd := exec.Command("git", "-C", repoPath, "update-index", "--no-skip-worktree", file)
 		if err := cmd.Run(); err != nil {
-			// Check if file is tracked
-			checkCmd := exec.Command("git", "-C", repoPath, "ls-files", file)
-			out, checkErr := checkCmd.Output()
-			if checkErr != nil || strings.TrimSpace(string(out)) == "" {
-				// File not tracked, silently skip
-				continue
-			}
 			failed = append(failed, fmt.Sprintf("%s (%v)", file, err))
 		}
 	}
