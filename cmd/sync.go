@@ -294,15 +294,22 @@ func scanForWorkspaces(repoRoot string) ([]manifest.WorkspaceEntry, error) {
 			return filepath.SkipDir
 		}
 
-		branch, err := git.GetCurrentBranch(workspacePath)
-		if err != nil {
-			branch = ""
-		}
-
 		commit, err := git.GetCurrentCommit(workspacePath)
 		if err != nil {
 			fmt.Println(i18n.T("failed_get_commit", relPath, err))
 			return filepath.SkipDir
+		}
+
+		// Detect modified files for auto-keep
+		var keepFiles []string
+		modifiedFiles, err := git.GetModifiedFiles(workspacePath)
+		if err == nil && len(modifiedFiles) > 0 {
+			// Clean up file list
+			for _, file := range modifiedFiles {
+				if strings.TrimSpace(file) != "" {
+					keepFiles = append(keepFiles, file)
+				}
+			}
 		}
 
 		fmt.Printf("  %s\n", i18n.T("found_sub", relPath))
@@ -310,8 +317,8 @@ func scanForWorkspaces(repoRoot string) ([]manifest.WorkspaceEntry, error) {
 		workspaces = append(workspaces, manifest.WorkspaceEntry{
 			Path:   relPath,
 			Repo:   repo,
-			Branch: branch,
 			Commit: commit,
+			Keep:   keepFiles,
 		})
 
 		// Skip descending into this workspace's subdirectories
