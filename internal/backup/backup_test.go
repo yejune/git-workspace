@@ -401,7 +401,7 @@ func TestCreatePatchBackup_Deduplication(t *testing.T) {
 	backupDir := filepath.Join(tmpDir, "backup")
 
 	// Create patch file
-	patchPath := filepath.Join(tmpDir, ".workspaces", "patches", "test.patch")
+	patchPath := filepath.Join(tmpDir, ".multirepos", "patches", "test.patch")
 	if err := os.MkdirAll(filepath.Dir(patchPath), 0755); err != nil {
 		t.Fatalf("failed to create patch directory: %v", err)
 	}

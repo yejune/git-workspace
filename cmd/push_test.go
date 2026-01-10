@@ -20,7 +20,7 @@ func setupPushTestEnv(t *testing.T, org, prefix, suffix string) (string, func())
 	t.Helper()
 
 	tempDir := t.TempDir()
-	configPath := filepath.Join(tempDir, ".git.multirepos")
+	configPath := filepath.Join(tempDir, ".git.multirepo")
 
 	// Set up config
 	if org != "" {

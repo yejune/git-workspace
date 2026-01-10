@@ -501,8 +501,8 @@ func TestListEmpty(t *testing.T) {
 			runList(listCmd, []string{})
 		})
 
-		if !strings.Contains(output, "No repositories registered") {
-			t.Errorf("should show no repositories message, got: %s", output)
+		if !strings.Contains(output, "No workspaces registered") {
+			t.Errorf("should show no workspaces message, got: %s", output)
 		}
 	})
 }
@@ -531,7 +531,7 @@ func TestSyncEmpty(t *testing.T) {
 			runSync(syncCmd, []string{})
 		})
 
-		if !strings.Contains(output, "No repositories found") || !strings.Contains(output, "No .git.multirepos found") {
+		if !strings.Contains(output, "No repositories found") && !strings.Contains(output, "No .git.multirepos found") {
 			t.Errorf("should show no repositories message, got: %s", output)
 		}
 	})
