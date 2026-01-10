@@ -17,27 +17,27 @@ Git submodules are powerful but come with friction:
 
 Git subtrees solve some problems but create others:
 
-- **No clear boundary**: Subtree history mixes with parent history
-- **Special commands**: `git subtree push` with arcane syntax
-- **No independent repo**: Can't easily work on the subtree as a separate project
+- **History pollution**: Subtree history merges with parent history
+- **Complex commands**: `git subtree split`, `git subtree push --prefix=...`
+- **Implicit tracking**: No clear manifest of what's a subtree vs regular code
 
 **git-workspace takes a different approach:**
 
 | Feature | Submodule | Subtree | git-workspace |
 |---------|-----------|---------|---------------|
-| Simple clone | `--recursive` required | Yes | Yes (with hook) |
-| Intuitive push | Yes | Special command | Yes |
-| Files in parent repo | Pointer only | Yes | Yes |
+| Simple clone | `--recursive` required | Yes | Yes |
+| Independent push | Yes | `subtree push` | Yes (just `cd` and `git push`) |
+| History separation | Yes | No (merges) | Yes |
 | Clear manifest | `.gitmodules` | No | `.git.workspaces` |
-| Independent repository | Yes | No | Yes |
-| Easy to understand | No | No | Yes |
+| Independent repository | Yes | Yes | Yes |
+| Intuitive commands | No | No | Yes |
 
-**git-workspace = Best of both worlds**
+**git-workspace = Submodule simplicity + Manifest clarity**
 
 - Source files tracked by parent (like subtree)
 - Independent `.git` for direct push (like submodule)
 - Simple manifest file for clear management
-- No special commands to remember
+- No complex commands - just `clone`, `sync`, `pull`
 
 ## Features
 
