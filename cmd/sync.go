@@ -341,22 +341,20 @@ func processKeepFiles(repoRoot, workspacePath string, keepFiles []string, issues
 
 	// Clean slate strategy: Remove directories before saving to prevent file leakage
 
-	// 1. Clean patches directory (complete workspace patch dir)
+	// 1. Clean patches directory (complete workspace patch dir) - 최신 상태만 유지
 	patchDir := filepath.Join(patchBaseDir, relPath)
 	os.RemoveAll(patchDir)
 	os.MkdirAll(patchDir, 0755)
 
-	// 2. Clean today's backup directories
+	// 2. Prepare today's backup directories (타임스탬프 기반 누적, 삭제 금지)
 	today := time.Now().Format("2006/01/02")
 
-	// Clean today's modified backup
+	// Ensure today's modified backup directory exists (누적)
 	modifiedDir := filepath.Join(backupDir, "modified", today, relPath)
-	os.RemoveAll(modifiedDir)
 	os.MkdirAll(modifiedDir, 0755)
 
-	// Clean today's patched backup
+	// Ensure today's patched backup directory exists (누적)
 	patchedDir := filepath.Join(backupDir, "patched", today, relPath)
-	os.RemoveAll(patchedDir)
 	os.MkdirAll(patchedDir, 0755)
 
 	// 3. Process ALL modified files within a single transaction
