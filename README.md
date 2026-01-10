@@ -164,16 +164,6 @@ Show detailed status of all workspaces.
 git workspace status  # shows branch, commits ahead/behind, modified files
 ```
 
-### `git workspace branch [workspace-path]`
-
-Show or switch branches of workspaces.
-
-```bash
-git workspace branch                    # show all workspace branches
-git workspace branch packages/lib       # show branch of specific workspace
-git workspace branch -b feature/new     # create and switch to new branch in all workspaces
-```
-
 ### `git workspace pull [workspace-path]`
 
 Pull latest changes from remote for workspaces.
@@ -204,14 +194,10 @@ Remove a workspace.
 ```bash
 git workspace remove packages/lib              # remove and delete files
 git workspace rm packages/lib --keep-files     # remove from manifest, keep files
-```
 
-### `git workspace init`
-
-Install git hooks for auto-sync.
-
-```bash
-git workspace init  # installs post-checkout hook to auto-sync
+# IMPORTANT: Run sync before remove to preserve local modifications
+git workspace sync          # saves modified keep files to .workspaces/backup/
+git workspace remove <path> # then remove workspace
 ```
 
 ### `git workspace selfupdate`
@@ -457,14 +443,16 @@ Operation:
 4. Delete files (when --keep-files not used)
    └─ rm -rf <workspace-path>
 
-⚠️ Danger: Deleted without backup
-💡 Recommendation: Use --keep-files or manual backup
+⚠️ Important: Remove deletes workspace directory immediately
+💡 Best practice: Run `git workspace sync` before remove
+   → Saves modified keep files to .workspaces/backup/
+💡 Alternative: Use --keep-files to preserve files
 ```
 
 **Safety**:
 - ✅ Modified file warning
 - ✅ Confirmation prompt
-- ⚠️ No automatic backup (future improvement planned)
+- ⚠️ No git-level protection (direct directory deletion)
 
 ---
 
@@ -590,8 +578,14 @@ patch -p1 < ../../.workspaces/patches/apps/api.log/config.json.patch
 ### When workspace is accidentally deleted
 
 ```bash
-# ⚠️ remove does not auto-create backups
-# Unrecoverable - use --keep-files beforehand
+# ⚠️ remove deletes the workspace directory immediately
+# Best practice: Run `git workspace sync` before remove
+# → Saves modified keep files to .workspaces/backup/
+
+# If you forgot to sync before remove:
+# 1. Modified keep files are lost (no backup)
+# 2. Unmodified files can be recovered by re-cloning
+git workspace clone <url> <path>
 ```
 
 ### When recovering from archived backups
@@ -618,12 +612,15 @@ my-project/
 ├── .git/                    <- Parent project git
 ├── .git.workspaces          <- Workspace manifest (tracked by parent)
 ├── .gitignore               <- Contains "packages/lib/.git/"
+├── .workspaces/             <- Backups and patches (gitignored)
+│   ├── backup/              <- Modified file backups
+│   └── patches/             <- Diff patches
 ├── src/
 │   └── main.go
 └── packages/
     └── lib/
-        ├── .git/            <- Workspace's independent git
-        └── lib.go           <- Tracked by BOTH repos
+        ├── .git/            <- Workspace's independent git (gitignored)
+        └── lib.go           <- Tracked by parent repo
 ```
 
 ### Key Points
