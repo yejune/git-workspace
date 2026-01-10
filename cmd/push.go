@@ -1,4 +1,4 @@
-// Package cmd implements the CLI commands for git-workspace
+// Package cmd implements the CLI commands for git-multirepo
 package cmd
 
 import (
@@ -10,24 +10,24 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
-	"github.com/yejune/git-workspace/internal/config"
-	"github.com/yejune/git-workspace/internal/git"
-	"github.com/yejune/git-workspace/internal/github"
+	"github.com/yejune/git-multirepo/internal/config"
+	"github.com/yejune/git-multirepo/internal/git"
+	"github.com/yejune/git-multirepo/internal/github"
 )
 
 var pushCmd = &cobra.Command{
 	Use:    "push [path]",
-	Short:  "Push workspace to organization",
+	Short:  "Push repository to organization",
 	Long: `Push local commits to organization repository.
 
 Creates a private repository if it doesn't exist.
 
 Examples:
-  git workspace push              # Push current directory
-  git workspace push apps/admin   # Push specific workspace
+  git multirepo push              # Push current directory
+  git multirepo push apps/admin   # Push specific repository
 
 Prerequisites:
-  - ~/.git.workspaces must exist with organization configured
+  - ~/.git.multirepo must exist with organization configured
   - GitHub authentication (gh CLI or git credential helper)`,
 	Hidden: true, // Hidden command
 	RunE:   runPush,
@@ -66,7 +66,7 @@ func runPush(cmd *cobra.Command, args []string) error {
 	// 2. Get organization URL from config
 	orgURL, err := config.GetOrganization()
 	if err != nil {
-		return fmt.Errorf("organization not configured in ~/.git.workspaces: %w", err)
+		return fmt.Errorf("organization not configured in ~/.git.multirepo: %w", err)
 	}
 
 	// 3. Determine repository name (normalize using config)

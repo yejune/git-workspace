@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yejune/git-workspace/internal/manifest"
+	"github.com/yejune/git-multirepo/internal/manifest"
 )
 
 // ============================================================================
@@ -168,8 +168,8 @@ func TestRunPull_NoWorkspaces(t *testing.T) {
 			}
 		})
 
-		if !strings.Contains(output, "No workspaces") && !strings.Contains(output, "no_subs_registered") {
-			t.Errorf("Should show no workspaces message, got: %s", output)
+		if !strings.Contains(output, "No repositories") && !strings.Contains(output, "no_subs_registered") {
+			t.Errorf("Should show no repositories message, got: %s", output)
 		}
 		_ = dir
 	})
@@ -527,7 +527,7 @@ func TestRunPull_NotGitRepo(t *testing.T) {
 	wsPath := filepath.Join(dir, "packages/broken")
 	os.RemoveAll(filepath.Join(wsPath, ".git"))
 
-	t.Run("pull on non-git workspace shows error", func(t *testing.T) {
+	t.Run("pull on non-git multirepo shows error", func(t *testing.T) {
 		restore := mockInteractiveChoice("y")
 		defer restore()
 

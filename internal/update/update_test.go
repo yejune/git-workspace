@@ -28,8 +28,8 @@ func TestNewUpdater(t *testing.T) {
 		if updater.RepoOwner != "yejune" {
 			t.Errorf("expected RepoOwner 'yejune', got %s", updater.RepoOwner)
 		}
-		if updater.RepoName != "git-workspace" {
-			t.Errorf("expected RepoName 'git-workspace', got %s", updater.RepoName)
+		if updater.RepoName != "git-multirepo" {
+			t.Errorf("expected RepoName 'git-multirepo', got %s", updater.RepoName)
 		}
 		if updater.CurrentVersion != "1.0.0" {
 			t.Errorf("expected CurrentVersion '1.0.0', got %s", updater.CurrentVersion)
@@ -124,7 +124,7 @@ func TestGetAssetName(t *testing.T) {
 	updater := NewUpdater("1.0.0")
 	assetName := updater.getAssetName()
 
-	expectedName := fmt.Sprintf("git-workspace-%s-%s", runtime.GOOS, runtime.GOARCH)
+	expectedName := fmt.Sprintf("git-multirepo-%s-%s", runtime.GOOS, runtime.GOARCH)
 	if assetName != expectedName {
 		t.Errorf("getAssetName() = %q, want %q", assetName, expectedName)
 	}
@@ -137,7 +137,7 @@ func TestCheckForUpdate(t *testing.T) {
 				body := `[{
 					"tag_name": "v2.0.0",
 					"assets": [
-						{"name": "git-workspace-darwin-arm64", "browser_download_url": "https://example.com/download"}
+						{"name": "git-multirepo-darwin-arm64", "browser_download_url": "https://example.com/download"}
 					]
 				}]`
 				return &http.Response{
@@ -298,7 +298,7 @@ func TestUpdate(t *testing.T) {
 	t.Run("successful update", func(t *testing.T) {
 		// Create a temp directory for the test executable
 		tempDir := t.TempDir()
-		execPath := filepath.Join(tempDir, "git-workspace")
+		execPath := filepath.Join(tempDir, "git-multirepo")
 		if err := os.WriteFile(execPath, []byte("old binary"), 0755); err != nil {
 			t.Fatalf("failed to create test executable: %v", err)
 		}
@@ -353,7 +353,7 @@ func TestUpdate(t *testing.T) {
 		release := &GitHubRelease{
 			TagName: "v2.0.0",
 			Assets: []Asset{
-				{Name: "git-workspace-windows-amd64", BrowserDownloadURL: "https://example.com/download"},
+				{Name: "git-multirepo-windows-amd64", BrowserDownloadURL: "https://example.com/download"},
 			},
 		}
 
@@ -368,7 +368,7 @@ func TestUpdate(t *testing.T) {
 
 	t.Run("download failure", func(t *testing.T) {
 		tempDir := t.TempDir()
-		execPath := filepath.Join(tempDir, "git-workspace")
+		execPath := filepath.Join(tempDir, "git-multirepo")
 		os.WriteFile(execPath, []byte("old binary"), 0755)
 
 		mockClient := &MockHTTPClient{
@@ -403,7 +403,7 @@ func TestUpdate(t *testing.T) {
 
 	t.Run("network error during download", func(t *testing.T) {
 		tempDir := t.TempDir()
-		execPath := filepath.Join(tempDir, "git-workspace")
+		execPath := filepath.Join(tempDir, "git-multirepo")
 		os.WriteFile(execPath, []byte("old binary"), 0755)
 
 		mockClient := &MockHTTPClient{
@@ -624,7 +624,7 @@ func TestGetLatestRelease(t *testing.T) {
 		if capturedReq.Header.Get("Accept") != "application/vnd.github.v3+json" {
 			t.Error("Accept header not set correctly")
 		}
-		if capturedReq.Header.Get("User-Agent") != "git-workspace-updater" {
+		if capturedReq.Header.Get("User-Agent") != "git-multirepo-updater" {
 			t.Error("User-Agent header not set correctly")
 		}
 	})
@@ -839,8 +839,8 @@ func TestGetAssetNameArchitectures(t *testing.T) {
 	assetName := updater.getAssetName()
 
 	// Verify it contains the expected format
-	if !strings.HasPrefix(assetName, "git-workspace-") {
-		t.Errorf("expected prefix 'git-workspace-', got %s", assetName)
+	if !strings.HasPrefix(assetName, "git-multirepo-") {
+		t.Errorf("expected prefix 'git-multirepo-', got %s", assetName)
 	}
 	if !strings.Contains(assetName, runtime.GOOS) {
 		t.Errorf("expected to contain %s, got %s", runtime.GOOS, assetName)

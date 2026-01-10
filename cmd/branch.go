@@ -7,23 +7,23 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/yejune/git-workspace/internal/git"
-	"github.com/yejune/git-workspace/internal/manifest"
+	"github.com/yejune/git-multirepo/internal/git"
+	"github.com/yejune/git-multirepo/internal/manifest"
 )
 
 var branchCmd = &cobra.Command{
-	Use:   "branch [workspace-path]",
-	Short: "Show branch information for workspaces",
-	Long: `Display current branch for all workspaces or a specific workspace.
+	Use:   "branch [repository-path]",
+	Short: "Show branch information for repositories",
+	Long: `Display current branch for all repositories or a specific repository.
 
 Shows:
-  - Workspace path
+  - Repository path
   - Repository URL
   - Current branch
 
 Examples:
-  git-workspace branch                 # Show all workspaces
-  git-workspace branch packages/lib    # Show specific workspace`,
+  git-multirepo branch                 # Show all repositories
+  git-multirepo branch packages/lib    # Show specific repository`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runBranch,
 }
@@ -44,7 +44,7 @@ func runBranch(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(m.Workspaces) == 0 {
-		fmt.Println("No workspaces registered.")
+		fmt.Println("No repositories registered.")
 		return nil
 	}
 
@@ -53,14 +53,14 @@ func runBranch(cmd *cobra.Command, args []string) error {
 		path := args[0]
 		ws := m.Find(path)
 		if ws == nil {
-			return fmt.Errorf("workspace not found: %s", path)
+			return fmt.Errorf("repository not found: %s", path)
 		}
 
 		return showBranchInfo(repoRoot, ws)
 	}
 
 	// Show all workspaces
-	fmt.Println("Workspaces:")
+	fmt.Println("Repositories:")
 	for _, ws := range m.Workspaces {
 		if err := showBranchInfo(repoRoot, &ws); err != nil {
 			fmt.Printf("  %s: %v\n", ws.Path, err)

@@ -3,9 +3,9 @@ package common
 import (
 	"fmt"
 
-	"github.com/yejune/git-workspace/internal/git"
-	"github.com/yejune/git-workspace/internal/i18n"
-	"github.com/yejune/git-workspace/internal/manifest"
+	"github.com/yejune/git-multirepo/internal/git"
+	"github.com/yejune/git-multirepo/internal/i18n"
+	"github.com/yejune/git-multirepo/internal/manifest"
 )
 
 // WorkspaceContext holds the repository root and manifest for workspace operations

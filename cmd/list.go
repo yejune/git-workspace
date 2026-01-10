@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/yejune/git-workspace/internal/git"
-	"github.com/yejune/git-workspace/internal/manifest"
+	"github.com/yejune/git-multirepo/internal/git"
+	"github.com/yejune/git-multirepo/internal/manifest"
 )
 
 var listRecursive bool
@@ -16,14 +16,14 @@ var listCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls"},
 	Short:   "List all registered workspaces",
-	Long: `Display all workspaces registered in .workspaces.
+	Long: `Display all workspaces registered in .git.multirepos.
 
 Shows path, repository URL, branch, and current status.
 
 Examples:
-  git workspace list
-  git workspace ls
-  git workspace ls -r`,
+  git multirepo list
+  git multirepo ls
+  git multirepo ls -r`,
 	RunE: runList,
 }
 

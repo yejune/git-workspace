@@ -5,20 +5,20 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/yejune/git-workspace/internal/backup"
-	"github.com/yejune/git-workspace/internal/git"
-	"github.com/yejune/git-workspace/internal/manifest"
+	"github.com/yejune/git-multirepo/internal/backup"
+	"github.com/yejune/git-multirepo/internal/git"
+	"github.com/yejune/git-multirepo/internal/manifest"
 )
 
 var resetCmd = &cobra.Command{
 	Use:   "reset",
-	Short: "Reset workspace (unhide all hidden files)",
-	Long: `Reset workspace by unhiding all files.
+	Short: "Reset repository state (unhide all hidden files)",
+	Long: `Reset repository state by unhiding all files.
 
 This will:
-  - Unskip all keep files (root and workspaces)
+  - Unskip all keep files (root and repositories)
   - Remove all ignore patterns from .gitignore
-  - Clear keep/ignore from .workspaces
+  - Clear keep/ignore from .git.multirepos
   - Create backups before changes
 
 All hidden files will become visible again.`,
@@ -40,9 +40,9 @@ func runReset(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load manifest: %w", err)
 	}
 
-	backupDir := filepath.Join(repoRoot, ".workspaces", "backup")
+	backupDir := filepath.Join(repoRoot, ".multirepos", "backup")
 
-	fmt.Println("Resetting workspace (unhiding all)...")
+	fmt.Println("Resetting repository state (unhiding all)...")
 
 	// ============ 1. Keep 파일 처리 ============
 	// Mother repo
@@ -110,8 +110,8 @@ func runReset(cmd *cobra.Command, args []string) error {
 	manifest.Save(repoRoot, m)
 
 	fmt.Println("\n✓ All hidden files are now visible")
-	fmt.Println("ℹ Backups saved to .workspaces/backup/")
-	fmt.Println("ℹ Patches preserved in .workspaces/patches/")
+	fmt.Println("ℹ Backups saved to .multirepos/backup/")
+	fmt.Println("ℹ Patches preserved in .multirepos/patches/")
 
 	return nil
 }

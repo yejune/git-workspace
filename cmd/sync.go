@@ -8,19 +8,19 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/yejune/git-workspace/internal/backup"
-	"github.com/yejune/git-workspace/internal/common"
-	"github.com/yejune/git-workspace/internal/git"
-	"github.com/yejune/git-workspace/internal/hooks"
-	"github.com/yejune/git-workspace/internal/i18n"
-	"github.com/yejune/git-workspace/internal/manifest"
-	"github.com/yejune/git-workspace/internal/patch"
+	"github.com/yejune/git-multirepo/internal/backup"
+	"github.com/yejune/git-multirepo/internal/common"
+	"github.com/yejune/git-multirepo/internal/git"
+	"github.com/yejune/git-multirepo/internal/hooks"
+	"github.com/yejune/git-multirepo/internal/i18n"
+	"github.com/yejune/git-multirepo/internal/manifest"
+	"github.com/yejune/git-multirepo/internal/patch"
 )
 
 var syncCmd = &cobra.Command{
 	Use:   "sync",
 	Short: "Clone missing workspaces and apply configurations",
-	Long: `Sync all workspaces from .workspaces manifest:
+	Long: `Sync all workspaces from .git.multirepos manifest:
   - Clone missing workspaces automatically
   - Install git hooks if not present
   - Apply ignore patterns to .gitignore
@@ -28,7 +28,7 @@ var syncCmd = &cobra.Command{
   - Verify .gitignore entries for workspaces
 
 Examples:
-  git workspace sync`,
+  git multirepo sync`,
 	RunE: runSync,
 }
 
@@ -202,15 +202,15 @@ func runSync(cmd *cobra.Command, args []string) error {
 	}
 
 	// 6. Check if archiving should run (24 hours check)
-	workspacesDir := filepath.Join(ctx.RepoRoot, ".workspaces")
-	if backup.ShouldRunArchive(workspacesDir) {
-		backupDir := filepath.Join(workspacesDir, "backup")
+	multireposDir := filepath.Join(ctx.RepoRoot, ".multirepos")
+	if backup.ShouldRunArchive(multireposDir) {
+		backupDir := filepath.Join(multireposDir, "backup")
 		if err := backup.ArchiveOldBackups(backupDir); err != nil {
 			fmt.Printf("\n⚠️  Archive failed: %v\n", err)
 			// Don't fail the entire sync if archiving fails
 		} else {
 			// Update check time only on success
-			if err := backup.UpdateArchiveCheck(workspacesDir); err != nil {
+			if err := backup.UpdateArchiveCheck(multireposDir); err != nil {
 				fmt.Printf("\n⚠️  Failed to update archive check time: %v\n", err)
 			}
 		}
@@ -327,8 +327,8 @@ func scanForWorkspaces(repoRoot string) ([]manifest.WorkspaceEntry, error) {
 
 // processKeepFiles handles backup, patch creation, and skip-worktree for keep files
 func processKeepFiles(repoRoot, workspacePath string, keepFiles []string, issues *int) {
-	backupDir := filepath.Join(repoRoot, ".workspaces", "backup")
-	patchBaseDir := filepath.Join(repoRoot, ".workspaces", "patches")
+	backupDir := filepath.Join(repoRoot, ".multirepos", "backup")
+	patchBaseDir := filepath.Join(repoRoot, ".multirepos", "patches")
 
 	// Determine workspace path for patches and backups
 	relPath, err := filepath.Rel(repoRoot, workspacePath)
@@ -410,7 +410,7 @@ func processKeepFiles(repoRoot, workspacePath string, keepFiles []string, issues
 			for _, f := range modifiedFiles {
 				fmt.Printf("  - %s\n", f)
 			}
-			fmt.Println("\nEdit .git.workspaces to keep only the files you need")
+			fmt.Println("\nEdit .git.multirepos to keep only the files you need")
 		}
 
 		// 3c. Process ALL modified files (backup + patch for all)

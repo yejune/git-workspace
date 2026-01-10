@@ -1,4 +1,4 @@
-// Package cmd implements the CLI commands for git-workspace
+// Package cmd implements the CLI commands for git-multirepo
 package cmd
 
 import (
@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/yejune/git-workspace/internal/git"
-	"github.com/yejune/git-workspace/internal/hooks"
-	"github.com/yejune/git-workspace/internal/manifest"
+	"github.com/yejune/git-multirepo/internal/git"
+	"github.com/yejune/git-multirepo/internal/hooks"
+	"github.com/yejune/git-multirepo/internal/manifest"
 )
 
 var (
@@ -21,16 +21,16 @@ var (
 
 var cloneCmd = &cobra.Command{
 	Use:   "clone <repository> [path]",
-	Short: "Clone a new workspace repository",
-	Long: `Clone a new workspace repository and add it to the parent project.
+	Short: "Clone a new repository",
+	Long: `Clone a new repository and add it to the parent project.
 
-Each workspace maintains its own .git directory and can push to its own remote,
+Each repository maintains its own .git directory and can push to its own remote,
 while the parent project tracks the source files (but not .git).
 
 Examples:
-  git workspace clone https://github.com/user/repo.git           # Clone to ./repo
-  git workspace clone https://github.com/user/repo.git lib/repo  # Clone to lib/repo
-  git workspace clone -b develop https://github.com/user/repo.git`,
+  git multirepo clone https://github.com/user/repo.git           # Clone to ./repo
+  git multirepo clone https://github.com/user/repo.git lib/repo  # Clone to lib/repo
+  git multirepo clone -b develop https://github.com/user/repo.git`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runClone,
 }
@@ -74,7 +74,7 @@ func runClone(cmd *cobra.Command, args []string) error {
 
 	// Check if already exists
 	if m.Exists(path) {
-		return fmt.Errorf("workspace already exists at %s", path)
+		return fmt.Errorf("repository already exists at %s", path)
 	}
 
 	// Create parent directory if needed
@@ -106,7 +106,7 @@ func runClone(cmd *cobra.Command, args []string) error {
 		fmt.Printf("⚠ Failed to install hook: %v\n", err)
 	}
 
-	fmt.Printf("✓ Added workspace: %s\n", path)
+	fmt.Printf("✓ Added repository: %s\n", path)
 	fmt.Printf("  Repository: %s\n", repo)
 
 	return nil

@@ -8,33 +8,33 @@ import (
 	"strings"
 )
 
-// ConfigExists checks if ~/.git.workspaces exists
+// ConfigExists checks if ~/.git.multirepo exists
 func ConfigExists() bool {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return false
 	}
 
-	configPath := filepath.Join(home, ".git.workspaces")
+	configPath := filepath.Join(home, ".git.multirepo")
 	_, err = os.Stat(configPath)
 	return err == nil
 }
 
 // GetOrganization reads workspace.organization from config
-// Returns: "https://github.com/git-workspaces", error
+// Returns: "https://github.com/git-multirepo", error
 func GetOrganization() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
 
-	configPath := filepath.Join(home, ".git.workspaces")
+	configPath := filepath.Join(home, ".git.multirepo")
 
 	cmd := exec.Command("git", "config", "-f", configPath,
 		"--get", "workspace.organization")
 	out, err := cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("organization not configured in ~/.git.workspaces")
+		return "", fmt.Errorf("organization not configured in ~/.git.multirepo")
 	}
 
 	org := strings.TrimSpace(string(out))
@@ -53,7 +53,7 @@ func GetStripPrefix() (string, error) {
 		return "", err
 	}
 
-	configPath := filepath.Join(home, ".git.workspaces")
+	configPath := filepath.Join(home, ".git.multirepo")
 
 	cmd := exec.Command("git", "config", "-f", configPath,
 		"--get", "workspace.stripPrefix")
@@ -73,7 +73,7 @@ func GetStripSuffix() (string, error) {
 		return "", err
 	}
 
-	configPath := filepath.Join(home, ".git.workspaces")
+	configPath := filepath.Join(home, ".git.multirepo")
 
 	cmd := exec.Command("git", "config", "-f", configPath,
 		"--get", "workspace.stripSuffix")

@@ -1,31 +1,31 @@
-name: git-workspace
+name: git-multirepo
 language: go
-description: Manage nested git repositories with independent push capability
-homepage: https://github.com/yejune/git-workspace
+description: Multi-repository management tool for nested git repositories with independent push capability
+homepage: https://github.com/yejune/git-multirepo
 license: MIT
 github:
     user: yejune
-    repo: git-workspace
+    repo: git-multirepo
     tap_repo: homebrew-tap
 build:
-    command: go build -ldflags "-X github.com/yejune/git-workspace/cmd.Version={{.Version}}" -o build/{{.Name}} .
+    command: go build -ldflags "-X github.com/yejune/git-multirepo/cmd.Version={{.Version}}" -o build/{{.Name}} .
 formula:
     install: |-
-        ldflags = "-X github.com/yejune/git-workspace/cmd.Version=#{version}"
-        system "go", "build", "-ldflags", ldflags, "-o", "git-workspace", "."
-        bin.install "git-workspace"
-    test: assert_match "version", shell_output("#{bin}/git-workspace --version")
+        ldflags = "-X github.com/yejune/git-multirepo/cmd.Version=#{version}"
+        system "go", "build", "-ldflags", ldflags, "-o", "git-multirepo", "."
+        bin.install "git-multirepo"
+    test: assert_match "version", shell_output("#{bin}/git-multirepo --version")
     caveats: |-
-        git-workspace has been installed!
+        git-multirepo has been installed!
 
         Quick Start:
-          git workspace clone https://github.com/user/repo.git
-          git workspace clone https://github.com/user/repo.git packages/repo
-          git workspace clone -b develop https://github.com/user/repo.git
+          git multirepo clone https://github.com/user/repo.git
+          git multirepo clone https://github.com/user/repo.git packages/repo
+          git multirepo clone -b develop https://github.com/user/repo.git
 
         Commands:
-          git workspace sync      Apply configuration
-          git workspace list      List workspaces
-          git workspace status    Show status
-          git workspace reset     Reset workspaces
-          git workspace pull      Pull updates
+          git multirepo sync      Apply configuration
+          git multirepo list      List workspaces
+          git multirepo status    Show status
+          git multirepo reset     Reset workspaces
+          git multirepo pull      Pull updates

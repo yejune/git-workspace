@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yejune/git-workspace/internal/update"
+	"github.com/yejune/git-multirepo/internal/update"
 )
 
 // MockHTTPClient is a mock HTTP client for testing
@@ -83,7 +83,7 @@ func TestRunSelfupdate(t *testing.T) {
 
 	t.Run("update available and download fails", func(t *testing.T) {
 		tempDir := t.TempDir()
-		execPath := tempDir + "/git-workspace"
+		execPath := tempDir + "/git-multirepo"
 		os.WriteFile(execPath, []byte("old binary"), 0755)
 
 		updaterFactory = func(version string) *update.Updater {
@@ -93,7 +93,7 @@ func TestRunSelfupdate(t *testing.T) {
 					requestCount++
 					if requestCount == 1 {
 						// First request: check for update
-						assetName := fmt.Sprintf("git-workspace-%s-%s", runtime.GOOS, runtime.GOARCH)
+						assetName := fmt.Sprintf("git-multirepo-%s-%s", runtime.GOOS, runtime.GOARCH)
 						body := fmt.Sprintf(`[{
 							"tag_name": "v2.0.0",
 							"assets": [{"name": "%s", "browser_download_url": "https://example.com/download"}]
@@ -138,7 +138,7 @@ func TestRunSelfupdate(t *testing.T) {
 
 	t.Run("successful update", func(t *testing.T) {
 		tempDir := t.TempDir()
-		execPath := tempDir + "/git-workspace"
+		execPath := tempDir + "/git-multirepo"
 		os.WriteFile(execPath, []byte("old binary"), 0755)
 
 		updaterFactory = func(version string) *update.Updater {
@@ -148,7 +148,7 @@ func TestRunSelfupdate(t *testing.T) {
 					requestCount++
 					if requestCount == 1 {
 						// First request: check for update
-						assetName := fmt.Sprintf("git-workspace-%s-%s", runtime.GOOS, runtime.GOARCH)
+						assetName := fmt.Sprintf("git-multirepo-%s-%s", runtime.GOOS, runtime.GOARCH)
 						body := fmt.Sprintf(`[{
 							"tag_name": "v2.0.0",
 							"assets": [{"name": "%s", "browser_download_url": "https://example.com/download"}]
@@ -199,7 +199,7 @@ func TestRunSelfupdate(t *testing.T) {
 
 	t.Run("dev version can update", func(t *testing.T) {
 		tempDir := t.TempDir()
-		execPath := tempDir + "/git-workspace"
+		execPath := tempDir + "/git-multirepo"
 		os.WriteFile(execPath, []byte("old binary"), 0755)
 
 		updaterFactory = func(version string) *update.Updater {
@@ -208,7 +208,7 @@ func TestRunSelfupdate(t *testing.T) {
 				DoFunc: func(req *http.Request) (*http.Response, error) {
 					requestCount++
 					if requestCount == 1 {
-						assetName := fmt.Sprintf("git-workspace-%s-%s", runtime.GOOS, runtime.GOARCH)
+						assetName := fmt.Sprintf("git-multirepo-%s-%s", runtime.GOOS, runtime.GOARCH)
 						body := fmt.Sprintf(`[{
 							"tag_name": "v1.0.0",
 							"assets": [{"name": "%s", "browser_download_url": "https://example.com/download"}]

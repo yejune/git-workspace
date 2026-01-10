@@ -16,7 +16,7 @@ func setupTempConfig(t *testing.T, org, prefix, suffix string) (string, func()) 
 	t.Helper()
 
 	tempDir := t.TempDir()
-	configPath := filepath.Join(tempDir, ".git.workspaces")
+	configPath := filepath.Join(tempDir, ".git.multirepo")
 
 	// Initialize git config file
 	if org != "" {
@@ -93,7 +93,7 @@ func TestConfigExists(t *testing.T) {
 
 func TestGetOrganization(t *testing.T) {
 	t.Run("get organization success", func(t *testing.T) {
-		expectedOrg := "https://github.com/git-workspaces"
+		expectedOrg := "https://github.com/git-multirepos"
 		_, cleanup := setupTempConfig(t, expectedOrg, "", "")
 		defer cleanup()
 
@@ -114,7 +114,7 @@ func TestGetOrganization(t *testing.T) {
 		if err == nil {
 			t.Error("GetOrganization() expected error when organization not set")
 		}
-		if err != nil && err.Error() != "organization not configured in ~/.git.workspaces" {
+		if err != nil && err.Error() != "organization not configured in ~/.git.multirepo" {
 			t.Errorf("GetOrganization() unexpected error message: %v", err)
 		}
 	})
@@ -133,7 +133,7 @@ func TestGetOrganization(t *testing.T) {
 
 	t.Run("organization is empty string", func(t *testing.T) {
 		tempDir := t.TempDir()
-		configPath := filepath.Join(tempDir, ".git.workspaces")
+		configPath := filepath.Join(tempDir, ".git.multirepo")
 
 		// Create config with empty organization
 		cmd := exec.Command("git", "config", "-f", configPath,

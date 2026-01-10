@@ -1,4 +1,4 @@
-module github.com/yejune/git-workspace
+module github.com/yejune/git-multirepo
 
 go 1.21
 

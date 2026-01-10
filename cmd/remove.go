@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/yejune/git-workspace/internal/common"
-	"github.com/yejune/git-workspace/internal/git"
-	"github.com/yejune/git-workspace/internal/interactive"
-	"github.com/yejune/git-workspace/internal/manifest"
+	"github.com/yejune/git-multirepo/internal/common"
+	"github.com/yejune/git-multirepo/internal/git"
+	"github.com/yejune/git-multirepo/internal/interactive"
+	"github.com/yejune/git-multirepo/internal/manifest"
 )
 
 var removeForce bool
@@ -18,16 +18,16 @@ var removeKeepFiles bool
 var removeCmd = &cobra.Command{
 	Use:     "remove <path>",
 	Aliases: []string{"rm"},
-	Short:   "Remove a workspace",
-	Long: `Remove a workspace from the manifest and optionally delete its files.
+	Short:   "Remove a repository",
+	Long: `Remove a repository from the manifest and optionally delete its files.
 
 By default, prompts before deleting files. Use --force to skip confirmation.
 Use --keep-files to only remove from manifest without deleting files.
 
 Examples:
-  git workspace remove packages/lib
-  git workspace rm packages/lib --force
-  git workspace rm packages/lib --keep-files`,
+  git multirepo remove packages/lib
+  git multirepo rm packages/lib --force
+  git multirepo rm packages/lib --keep-files`,
 	Args: cobra.ExactArgs(1),
 	RunE: runRemove,
 }
@@ -47,7 +47,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 	}
 
 	if !ctx.Manifest.Exists(path) {
-		return fmt.Errorf("workspace not found: %s", path)
+		return fmt.Errorf("repository not found: %s", path)
 	}
 
 	fullPath := filepath.Join(ctx.RepoRoot, path)
@@ -56,7 +56,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 	if git.IsRepo(fullPath) {
 		hasChanges, _ := git.HasChanges(fullPath)
 		if hasChanges && !removeForce {
-			return fmt.Errorf("workspace has uncommitted changes. Use --force to remove anyway")
+			return fmt.Errorf("repository has uncommitted changes. Use --force to remove anyway")
 		}
 	}
 
@@ -96,7 +96,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 
 	// Confirm deletion using unified prompt
 	if !removeKeepFiles && !removeForce {
-		confirmed, err := interactive.ConfirmYN(fmt.Sprintf("Remove workspace '%s' and delete its files? [y/N] ", path))
+		confirmed, err := interactive.ConfirmYN(fmt.Sprintf("Remove repository '%s' and delete its files? [y/N] ", path))
 		if err != nil {
 			return fmt.Errorf("failed to read confirmation: %w", err)
 		}
@@ -124,9 +124,9 @@ func runRemove(cmd *cobra.Command, args []string) error {
 		if err := os.RemoveAll(fullPath); err != nil {
 			return fmt.Errorf("failed to delete files: %w", err)
 		}
-		fmt.Printf("✓ Removed workspace: %s (files deleted)\n", path)
+		fmt.Printf("✓ Removed repository: %s (files deleted)\n", path)
 	} else {
-		fmt.Printf("✓ Removed workspace: %s (files kept)\n", path)
+		fmt.Printf("✓ Removed repository: %s (files kept)\n", path)
 	}
 
 	return nil

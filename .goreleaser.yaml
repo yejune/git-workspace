@@ -6,9 +6,9 @@ before:
     - go mod tidy
 
 builds:
-  - id: git-workspace
+  - id: git-multirepo
     main: .
-    binary: git-workspace
+    binary: git-multirepo
     env:
       - CGO_ENABLED=0
     goos:
@@ -23,7 +23,7 @@ builds:
         goarch: arm64
     ldflags:
       - -s -w
-      - -X github.com/yejune/git-workspace/cmd.Version={{.Version}}
+      - -X github.com/yejune/git-multirepo/cmd.Version={{.Version}}
 
 archives:
   - id: default
@@ -52,16 +52,16 @@ changelog:
       - '^chore:'
 
 brews:
-  - name: git-workspace
+  - name: git-multirepo
     repository:
       owner: yejune
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     folder: Formula
-    homepage: "https://github.com/yejune/git-workspace"
-    description: "Manage nested git repositories with independent push capability"
+    homepage: "https://github.com/yejune/git-multirepo"
+    description: "Multi-repository management tool for nested git repositories with independent push capability"
     license: "MIT"
     install: |
-      bin.install "git-workspace"
+      bin.install "git-multirepo"
     test: |
-      system "#{bin}/git-workspace", "--version"
+      system "#{bin}/git-multirepo", "--version"

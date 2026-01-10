@@ -8,20 +8,20 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/yejune/git-workspace/internal/update"
+	"github.com/yejune/git-multirepo/internal/update"
 )
 
 var selfupdateCmd = &cobra.Command{
 	Use:     "selfupdate",
 	Aliases: []string{"self-update"},
-	Short:   "Update git-workspace to the latest version",
-	Long: `Check for and install the latest version of git-workspace.
+	Short:   "Update git-multirepo to the latest version",
+	Long: `Check for and install the latest version of git-multirepo.
 
 This command checks GitHub releases for a newer version and automatically
 downloads and installs it, replacing the current executable.
 
 Examples:
-  git workspace selfupdate`,
+  git multirepo selfupdate`,
 	RunE: runSelfupdate,
 }
 
@@ -41,9 +41,9 @@ func runSelfupdate(cmd *cobra.Command, args []string) error {
 		execPath, _ = filepath.EvalSymlinks(execPath)
 		if strings.Contains(execPath, "/homebrew/") || strings.Contains(execPath, "/Cellar/") || strings.Contains(execPath, "/Homebrew/") {
 			fmt.Println("Detected Homebrew installation")
-			fmt.Println("Running: brew upgrade git-workspace")
+			fmt.Println("Running: brew upgrade yejune/tap/git-multirepo")
 
-			brewCmd := exec.Command("brew", "upgrade", "git-workspace")
+			brewCmd := exec.Command("brew", "upgrade", "yejune/tap/git-multirepo")
 			brewCmd.Stdout = os.Stdout
 			brewCmd.Stderr = os.Stderr
 			return brewCmd.Run()

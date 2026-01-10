@@ -27,7 +27,7 @@ func Clone(repo, path, branch string) error {
 // This is used when source files are already tracked by parent but .git is missing
 func InitRepo(path, repo, branch string) error {
 	// Create a temporary directory for bare clone
-	tempDir, err := os.MkdirTemp("", "git-workspace-*")
+	tempDir, err := os.MkdirTemp("", "git-multirepo-*")
 	if err != nil {
 		return fmt.Errorf("failed to create temp dir: %w", err)
 	}
@@ -199,7 +199,7 @@ func AddIgnorePatternsToGitignore(repoRoot string, patterns []string) error {
 	}
 
 	// Add header comment
-	if _, err := f.WriteString("\n# git-workspace ignore\n"); err != nil {
+	if _, err := f.WriteString("\n# git-multirepo ignore\n"); err != nil {
 		return err
 	}
 
@@ -213,7 +213,7 @@ func AddIgnorePatternsToGitignore(repoRoot string, patterns []string) error {
 	return nil
 }
 
-// RemoveIgnorePatternsFromGitignore removes git-workspace ignore section from .gitignore
+// RemoveIgnorePatternsFromGitignore removes git-multirepo ignore section from .gitignore
 func RemoveIgnorePatternsFromGitignore(repoRoot string) error {
 	gitignorePath := filepath.Join(repoRoot, ".gitignore")
 
@@ -233,14 +233,14 @@ func RemoveIgnorePatternsFromGitignore(repoRoot string) error {
 		trimmed := strings.TrimSpace(line)
 
 		// Start of ignore section
-		if trimmed == "# git-workspace ignore" {
+		if trimmed == "# git-multirepo ignore" {
 			inIgnoreSection = true
 			continue
 		}
 
 		// End of ignore section (empty line or next section)
 		if inIgnoreSection {
-			if trimmed == "" || (strings.HasPrefix(trimmed, "#") && !strings.Contains(trimmed, "git-workspace")) {
+			if trimmed == "" || (strings.HasPrefix(trimmed, "#") && !strings.Contains(trimmed, "git-multirepo")) {
 				inIgnoreSection = false
 			} else {
 				// Skip lines in ignore section
@@ -447,7 +447,7 @@ func CountChangedFiles(path string) (int, error) {
 
 // Stash stashes all local changes
 func Stash(path string) error {
-	cmd := exec.Command("git", "-C", path, "stash", "push", "-m", "git-workspace auto-stash")
+	cmd := exec.Command("git", "-C", path, "stash", "push", "-m", "git-multirepo auto-stash")
 	return cmd.Run()
 }
 

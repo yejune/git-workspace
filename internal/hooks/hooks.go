@@ -7,24 +7,24 @@ import (
 )
 
 const postCheckoutHook = `#!/bin/sh
-# git-workspace post-checkout hook
+# git-multirepo post-checkout hook
 # Automatically syncs subs after checkout
 
-if command -v git-workspace >/dev/null 2>&1; then
-    git-workspace sync
+if command -v git-multirepo >/dev/null 2>&1; then
+    git-multirepo sync
 fi
 `
 
 const postCommitHook = `#!/bin/sh
-# git-workspace post-commit hook for sub repositories
-# Automatically updates parent's .workspaces after commit
+# git-multirepo post-commit hook for sub repositories
+# Automatically updates parent's .git.multirepos after commit
 
-# Find parent repository (look for .workspaces)
+# Find parent repository (look for .git.multirepos)
 find_parent() {
     local dir="$1"
     while [ "$dir" != "/" ] && [ "$dir" != "." ]; do
         dir=$(dirname "$dir")
-        if [ -f "$dir/.workspaces" ]; then
+        if [ -f "$dir/.git.multirepos" ]; then
             echo "$dir"
             return 0
         fi
@@ -45,13 +45,13 @@ if [ -z "$PARENT_ROOT" ]; then
     exit 0
 fi
 
-# Check if git-workspace is available
-if ! command -v git-workspace >/dev/null 2>&1; then
+# Check if git-multirepo is available
+if ! command -v git-multirepo >/dev/null 2>&1; then
     exit 0
 fi
 
-# Update parent's .workspaces
-cd "$PARENT_ROOT" && git-workspace sync 2>/dev/null || true
+# Update parent's .git.multirepos
+cd "$PARENT_ROOT" && git-multirepo sync 2>/dev/null || true
 `
 
 // Install installs git hooks in the repository

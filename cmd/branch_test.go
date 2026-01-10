@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yejune/git-workspace/internal/manifest"
+	"github.com/yejune/git-multirepo/internal/manifest"
 )
 
 // Display Tests (4 tests)
@@ -26,8 +26,8 @@ func TestRunBranch_AllWorkspaces(t *testing.T) {
 			runBranch(branchCmd, []string{})
 		})
 
-		if !strings.Contains(output, "Workspaces:") {
-			t.Errorf("output should contain 'Workspaces:', got: %s", output)
+		if !strings.Contains(output, "Repositories:") {
+			t.Errorf("output should contain 'Repositories:', got: %s", output)
 		}
 		if !strings.Contains(output, "packages/ws1") {
 			t.Errorf("output should contain workspace path, got: %s", output)
@@ -107,8 +107,8 @@ func TestRunBranch_NoWorkspaces(t *testing.T) {
 			runBranch(branchCmd, []string{})
 		})
 
-		if !strings.Contains(output, "No workspaces registered") {
-			t.Errorf("output should show no workspaces message, got: %s", output)
+		if !strings.Contains(output, "No repositories registered") {
+			t.Errorf("output should show no repositories message, got: %s", output)
 		}
 	})
 }
@@ -191,7 +191,7 @@ func TestRunBranch_ManifestLoadError(t *testing.T) {
 	defer cleanup()
 
 	// Create invalid manifest
-	manifestPath := filepath.Join(dir, ".git.workspaces")
+	manifestPath := filepath.Join(dir, ".git.multirepos")
 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 
 	t.Run("branch with manifest load error", func(t *testing.T) {
@@ -220,8 +220,8 @@ func TestRunBranch_WorkspaceNotFound(t *testing.T) {
 		if err == nil {
 			t.Error("should error on non-existent workspace")
 		}
-		if !strings.Contains(err.Error(), "workspace not found") {
-			t.Errorf("expected 'workspace not found' error, got: %v", err)
+		if !strings.Contains(err.Error(), "repository not found") {
+			t.Errorf("expected 'repository not found' error, got: %v", err)
 		}
 		_ = dir
 	})

@@ -1,13 +1,13 @@
-# git-workspace
+# git-multirepo
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/yejune/git-workspace?include_prereleases)](https://github.com/yejune/git-workspace/releases)
-[![CI](https://github.com/yejune/git-workspace/actions/workflows/ci.yml/badge.svg)](https://github.com/yejune/git-workspace/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/yejune/git-multirepo?include_prereleases)](https://github.com/yejune/git-multirepo/releases)
+[![CI](https://github.com/yejune/git-multirepo/actions/workflows/ci.yml/badge.svg)](https://github.com/yejune/git-multirepo/actions/workflows/ci.yml)
 
 Manage nested git repositories with independent push capability.
 
-## Why git-workspace?
+## Why git-multirepo?
 
 Git submodules are powerful but come with friction:
 
@@ -21,18 +21,18 @@ Git subtrees solve some problems but create others:
 - **Complex commands**: `git subtree split`, `git subtree push --prefix=...`
 - **Implicit tracking**: No clear manifest of what's a subtree vs regular code
 
-**git-workspace takes a different approach:**
+**git-multirepo takes a different approach:**
 
-| Feature | Submodule | Subtree | git-workspace |
+| Feature | Submodule | Subtree | git-multirepo |
 |---------|-----------|---------|---------------|
 | Simple clone | `--recursive` required | Yes | Yes |
 | Independent push | Yes | `subtree push` | Yes (just `cd` and `git push`) |
 | History separation | Yes | No (merges) | Yes |
-| Clear manifest | `.gitmodules` | No | `.git.workspaces` |
+| Clear manifest | `.gitmodules` | No | `.git.multirepos` |
 | Independent repository | Yes | Yes | Yes |
 | Intuitive commands | No | No | Yes |
 
-**git-workspace = Submodule simplicity + Manifest clarity**
+**git-multirepo = Submodule simplicity + Manifest clarity**
 
 - Source files tracked by parent (like subtree)
 - Independent `.git` for direct push (like submodule)
@@ -41,11 +41,11 @@ Git subtrees solve some problems but create others:
 
 ## Features
 
-- **Clone as workspace**: `git workspace clone <url>` - just like `git clone`
+- **Clone as workspace**: `git multirepo clone <url>` - just like `git clone`
 - **Sync all**: Pull/clone all workspaces with one command
 - **Direct push**: Each workspace has independent `.git` - just `cd` and `git push`
 - **Auto-sync hook**: Optionally sync after checkout
-- **Self-update**: Update the binary with `git workspace selfupdate`
+- **Self-update**: Update the binary with `git multirepo selfupdate`
 - **Recursive sync**: Sync workspaces within workspaces
 
 ## Installation
@@ -53,124 +53,124 @@ Git subtrees solve some problems but create others:
 ### Using Homebrew (macOS/Linux)
 
 ```bash
-brew install yejune/tap/git-workspace
+brew install yejune/tap/git-multirepo
 ```
 
 ### Using curl
 
 ```bash
 # macOS (Apple Silicon)
-curl -L https://github.com/yejune/git-workspace/releases/latest/download/git-workspace-darwin-arm64 -o /usr/local/bin/git-workspace
-chmod +x /usr/local/bin/git-workspace
+curl -L https://github.com/yejune/git-multirepo/releases/latest/download/git-multirepo-darwin-arm64 -o /usr/local/bin/git-multirepo
+chmod +x /usr/local/bin/git-multirepo
 
 # macOS (Intel)
-curl -L https://github.com/yejune/git-workspace/releases/latest/download/git-workspace-darwin-amd64 -o /usr/local/bin/git-workspace
-chmod +x /usr/local/bin/git-workspace
+curl -L https://github.com/yejune/git-multirepo/releases/latest/download/git-multirepo-darwin-amd64 -o /usr/local/bin/git-multirepo
+chmod +x /usr/local/bin/git-multirepo
 
 # Linux (x86_64)
-curl -L https://github.com/yejune/git-workspace/releases/latest/download/git-workspace-linux-amd64 -o /usr/local/bin/git-workspace
-chmod +x /usr/local/bin/git-workspace
+curl -L https://github.com/yejune/git-multirepo/releases/latest/download/git-multirepo-linux-amd64 -o /usr/local/bin/git-multirepo
+chmod +x /usr/local/bin/git-multirepo
 ```
 
 ### Using Go
 
 ```bash
-go install github.com/yejune/git-workspace@latest
+go install github.com/yejune/git-multirepo@latest
 ```
 
 ### From Source
 
 ```bash
-git clone https://github.com/yejune/git-workspace.git
-cd git-workspace
-go build -o git-workspace
-sudo mv git-workspace /usr/local/bin/
+git clone https://github.com/yejune/git-multirepo.git
+cd git-multirepo
+go build -o git-multirepo
+sudo mv git-multirepo /usr/local/bin/
 ```
 
 ## Quick Start
 
 ```bash
 # Clone a repository as workspace
-git workspace clone https://github.com/user/repo.git
+git multirepo clone https://github.com/user/repo.git
 
 # With custom path
-git workspace clone https://github.com/user/repo.git packages/repo
+git multirepo clone https://github.com/user/repo.git packages/repo
 
 # With specific branch
-git workspace clone -b develop https://github.com/user/repo.git
+git multirepo clone -b develop https://github.com/user/repo.git
 
 # SSH format
-git workspace clone git@github.com:user/repo.git
+git multirepo clone git@github.com:user/repo.git
 ```
 
 ## Commands
 
-### `git workspace clone [url] [path]`
+### `git multirepo clone [url] [path]`
 
 Clone a repository as a workspace (default command).
 
 ```bash
-git workspace clone https://github.com/user/lib.git              # -> ./lib/
-git workspace clone https://github.com/user/lib.git packages/lib # -> ./packages/lib/
-git workspace clone -b develop git@github.com:user/lib.git       # specific branch
+git multirepo clone https://github.com/user/lib.git              # -> ./lib/
+git multirepo clone https://github.com/user/lib.git packages/lib # -> ./packages/lib/
+git multirepo clone -b develop git@github.com:user/lib.git       # specific branch
 ```
 
-### `git workspace sync`
+### `git multirepo sync`
 
-Auto-discover workspaces or sync from .git.workspaces. Has two modes:
+Auto-discover workspaces or sync from .git.multirepos. Has two modes:
 
-**Mode 1: Discovery Mode** (no .git.workspaces)
+**Mode 1: Discovery Mode** (no .git.multirepos)
 ```bash
-# Situation: .git.workspaces doesn't exist
+# Situation: .git.multirepos doesn't exist
 packages/lib/.git/      # existing workspace
 packages/utils/.git/    # existing workspace
 
-git workspace sync
+git multirepo sync
 # → Recursively scans directories
 # → Auto-detects .git folders
 # → Extracts remote, branch, commit
-# → Creates .git.workspaces automatically
+# → Creates .git.multirepos automatically
 ```
 
-**Mode 2: Sync Mode** (has .git.workspaces)
+**Mode 2: Sync Mode** (has .git.multirepos)
 ```bash
-# Situation: .git.workspaces exists
-git workspace sync
-# → Reads .git.workspaces
+# Situation: .git.multirepos exists
+git multirepo sync
+# → Reads .git.multirepos
 # → Restores missing .git directories
 # → Installs/updates hooks
 # → Updates commit hashes if pushed
 ```
 
 **Use Cases:**
-- Migrating existing project to git-workspace
-- Recovering from deleted .git.workspaces
+- Migrating existing project to git-multirepo
+- Recovering from deleted .git.multirepos
 - First-time setup: just clone and run sync
 
-### `git workspace list`
+### `git multirepo list`
 
 List all registered workspaces.
 
 ```bash
-git workspace list    # list workspaces
-git workspace ls      # alias
+git multirepo list    # list workspaces
+git multirepo ls      # alias
 ```
 
-### `git workspace status`
+### `git multirepo status`
 
 Show detailed status of all workspaces.
 
 ```bash
-git workspace status  # shows branch, commits ahead/behind, modified files
+git multirepo status  # shows branch, commits ahead/behind, modified files
 ```
 
-### `git workspace branch [workspace-path]`
+### `git multirepo branch [workspace-path]`
 
 Show current branch for workspaces.
 
 ```bash
-git workspace branch                    # show all workspace branches
-git workspace branch packages/lib       # show branch of specific workspace
+git multirepo branch                    # show all workspace branches
+git multirepo branch packages/lib       # show branch of specific workspace
 ```
 
 Displays:
@@ -179,57 +179,57 @@ Displays:
 - Current branch
 - Remote tracking branch (if exists)
 
-### `git workspace pull [workspace-path]`
+### `git multirepo pull [workspace-path]`
 
 Pull latest changes from remote for workspaces.
 
 ```bash
-git workspace pull                      # pull all workspaces
-git workspace pull packages/lib         # pull specific workspace
+git multirepo pull                      # pull all workspaces
+git multirepo pull packages/lib         # pull specific workspace
 # Automatically handles keep files with patch application
 # See "How It Works: Sync & Pull Workflow" for details
 ```
 
-### `git workspace reset`
+### `git multirepo reset`
 
 Reset skip-worktree flags and restore files to HEAD state.
 
 ```bash
-git workspace reset                     # reset all (skip + ignore)
-git workspace reset skip                # reset skip-worktree only
-git workspace reset ignore              # reset ignore patterns only
+git multirepo reset                     # reset all (skip + ignore)
+git multirepo reset skip                # reset skip-worktree only
+git multirepo reset ignore              # reset ignore patterns only
 # Creates backup before resetting
 # See "Command Workflows: Complete Reference" for details
 ```
 
-### `git workspace remove [path]`
+### `git multirepo remove [path]`
 
 Remove a workspace.
 
 ```bash
-git workspace remove packages/lib              # remove and delete files
-git workspace rm packages/lib --keep-files     # remove from manifest, keep files
+git multirepo remove packages/lib              # remove and delete files
+git multirepo rm packages/lib --keep-files     # remove from manifest, keep files
 
 # IMPORTANT: Run sync before remove to preserve local modifications
-git workspace sync          # saves modified keep files to .workspaces/backup/
-git workspace remove <path> # then remove workspace
+git multirepo sync          # saves modified keep files to .multirepos/backup/
+git multirepo remove <path> # then remove workspace
 ```
 
-### `git workspace selfupdate`
+### `git multirepo selfupdate`
 
-Update git-workspace to the latest version.
+Update git-multirepo to the latest version.
 
 ```bash
-git workspace selfupdate  # downloads and installs latest release
+git multirepo selfupdate  # downloads and installs latest release
 ```
 
 ## How It Works: Sync & Pull Workflow
 
-Understanding the workflow is crucial for using git-workspace effectively. Here's what happens under the hood.
+Understanding the workflow is crucial for using git-multirepo effectively. Here's what happens under the hood.
 
 ### Sync Workflow
 
-When you run `git workspace sync`, the following steps occur:
+When you run `git multirepo sync`, the following steps occur:
 
 ```
 1. Unskip → 2. Detect Changes → 3. Backup → 4. Create Patches → 5. Re-skip
@@ -246,13 +246,13 @@ When you run `git workspace sync`, the following steps occur:
    - Identifies which files need backup/patch
 
 3. **Backup modified files**
-   - Saves original file content to `.workspaces/backup/modified/YYYY/MM/DD/`
+   - Saves original file content to `.multirepos/backup/modified/YYYY/MM/DD/`
    - Daily timestamped backups for safety
 
 4. **Create patches** (`git diff HEAD file`)
    - Generates unified diff patches
-   - Saved to `.workspaces/patches/workspace/file.patch`
-   - Backup patches also saved to `.workspaces/backup/patched/YYYY/MM/DD/`
+   - Saved to `.multirepos/patches/workspace/file.patch`
+   - Backup patches also saved to `.multirepos/backup/patched/YYYY/MM/DD/`
 
 5. **Re-apply skip-worktree** (`git update-index --skip-worktree`)
    - Protects local modifications from git operations
@@ -264,7 +264,7 @@ When you run `git workspace sync`, the following steps occur:
 
 ### Pull Workflow
 
-When you run `git workspace pull`, the following steps occur:
+When you run `git multirepo pull`, the following steps occur:
 
 ```
 1. Unskip → 2. Git Pull → 3. Apply Patches → 4. Re-skip
@@ -291,7 +291,7 @@ When you run `git workspace pull`, the following steps occur:
 **When Conflicts Happen (Expected):**
 
 ```bash
-$ git workspace pull
+$ git multirepo pull
 
 apps/api.config:
   ✓ Pulled latest changes
@@ -300,7 +300,7 @@ apps/api.config:
   Manual steps required:
   1. Check the conflict in apps/api.config/config.json
   2. Manually merge your changes with new upstream
-  3. Run: git workspace sync
+  3. Run: git multirepo sync
 ```
 
 **Why we want manual conflict resolution:**
@@ -322,12 +322,12 @@ The `skip-worktree` flag tells git to **ignore local modifications** to tracked 
 - ❌ Accidental `git add` staging protected files
 
 **What it doesn't protect:**
-- ✅ `git workspace pull` temporarily unskips (intentional)
+- ✅ `git multirepo pull` temporarily unskips (intentional)
 - ✅ Manual `git update-index --no-skip-worktree` (you asked for it)
 - ✅ Direct file deletion with `rm` (filesystem operation)
 
 **Best Practice:**
-Always use `git workspace` commands for workspaces with keep files.
+Always use `git multirepo` commands for workspaces with keep files.
 
 ---
 
@@ -350,16 +350,16 @@ This section provides detailed internal operation flows for all commands.
    └─ git ls-files -v (skip-worktree files)
 
 3. Create backups
-   ├─ Original files → .workspaces/backup/modified/YYYY/MM/DD/
-   ├─ Patch files → .workspaces/patches/
-   └─ Patch backups → .workspaces/backup/patched/YYYY/MM/DD/
+   ├─ Original files → .multirepos/backup/modified/YYYY/MM/DD/
+   ├─ Patch files → .multirepos/patches/
+   └─ Patch backups → .multirepos/backup/patched/YYYY/MM/DD/
 
 4. Re-skip keep files
    └─ git update-index --skip-worktree <files>
    └─ Purpose: Protect from git pull
 
 ✅ Data protection: All changes are backed up
-✅ Recoverable: Restore from .workspaces/backup/
+✅ Recoverable: Restore from .multirepos/backup/
 ```
 
 **Safety**:
@@ -407,13 +407,13 @@ This section provides detailed internal operation flows for all commands.
 
 **Workflow**:
 ```
-git workspace reset          # Full reset
-git workspace reset ignore   # Ignore only
-git workspace reset skip     # Skip-worktree only
+git multirepo reset          # Full reset
+git multirepo reset ignore   # Ignore only
+git multirepo reset skip     # Skip-worktree only
 
 Reset Skip Operation:
 1. Backup keep files (NEW!)
-   └─ .workspaces/backup/modified/YYYY/MM/DD/
+   └─ .multirepos/backup/modified/YYYY/MM/DD/
 
 2. Unskip
    └─ git update-index --no-skip-worktree
@@ -442,8 +442,8 @@ Reset Skip Operation:
 
 **Workflow**:
 ```
-git workspace remove <path>              # Delete files too
-git workspace remove --keep-files <path> # Remove from manifest only
+git multirepo remove <path>              # Delete files too
+git multirepo remove --keep-files <path> # Remove from manifest only
 
 Operation:
 1. Show modified file warning (NEW!)
@@ -453,14 +453,14 @@ Operation:
    └─ Prompt if --force not used
 
 3. Remove from manifest
-   └─ Update .git.workspaces
+   └─ Update .git.multirepos
 
 4. Delete files (when --keep-files not used)
    └─ rm -rf <workspace-path>
 
 ⚠️ Important: Remove deletes workspace directory immediately
-💡 Best practice: Run `git workspace sync` before remove
-   → Saves modified keep files to .workspaces/backup/
+💡 Best practice: Run `git multirepo sync` before remove
+   → Saves modified keep files to .multirepos/backup/
 💡 Alternative: Use --keep-files to preserve files
 ```
 
@@ -485,7 +485,7 @@ Operation:
 ## Backup Directory Structure
 
 ```
-.workspaces/
+.multirepos/
   backup/
     modified/           # Original file backups
       2026/01/09/
@@ -553,14 +553,14 @@ Trigger: Auto-check during sync (once per 24 hours)
 **Recovery from archives**:
 ```bash
 # List archived backups
-ls -lh .workspaces/backup/archived/
+ls -lh .multirepos/backup/archived/
 
 # Extract specific month
-tar -xzf .workspaces/backup/archived/2025-12-modified.tar.gz \
-    -C .workspaces/backup/modified/
+tar -xzf .multirepos/backup/archived/2025-12-modified.tar.gz \
+    -C .multirepos/backup/modified/
 
 # Extract specific file only
-tar -xzf .workspaces/backup/archived/2025-12-modified.tar.gz \
+tar -xzf .multirepos/backup/archived/2025-12-modified.tar.gz \
     2025/12/09/apps/api/config.json.20251209_143022
 ```
 
@@ -572,46 +572,46 @@ tar -xzf .workspaces/backup/archived/2025-12-modified.tar.gz \
 
 ```bash
 # 1. Find backup
-ls .workspaces/backup/modified/2026/01/09/
+ls .multirepos/backup/modified/2026/01/09/
 
 # 2. Check latest backup
-ls -lt .workspaces/backup/modified/2026/01/09/apps/api.log/
+ls -lt .multirepos/backup/modified/2026/01/09/apps/api.log/
 
 # 3. Recover
-cp .workspaces/backup/modified/2026/01/09/apps/api.log/config.json.20260109_143022 \
+cp .multirepos/backup/modified/2026/01/09/apps/api.log/config.json.20260109_143022 \
    apps/api.log/config.json
 ```
 
 ### When patch application fails after pull
 
 ```bash
-# Patch is saved in .git/git-workspace/patches/ or backup
+# Patch is saved in .git/git-multirepo/patches/ or backup
 cd apps/api.log
-patch -p1 < ../../.workspaces/patches/apps/api.log/config.json.patch
+patch -p1 < ../../.multirepos/patches/apps/api.log/config.json.patch
 ```
 
 ### When workspace is accidentally deleted
 
 ```bash
 # ⚠️ remove deletes the workspace directory immediately
-# Best practice: Run `git workspace sync` before remove
-# → Saves modified keep files to .workspaces/backup/
+# Best practice: Run `git multirepo sync` before remove
+# → Saves modified keep files to .multirepos/backup/
 
 # If you forgot to sync before remove:
 # 1. Modified keep files are lost (no backup)
 # 2. Unmodified files can be recovered by re-cloning
-git workspace clone <url> <path>
+git multirepo clone <url> <path>
 ```
 
 ### When recovering from archived backups
 
 ```bash
 # Check archived backup size
-du -sh .workspaces/backup/archived/*.tar.gz
+du -sh .multirepos/backup/archived/*.tar.gz
 
 # Extract specific month's backup
-tar -xzf .workspaces/backup/archived/2025-12-modified.tar.gz \
-    -C .workspaces/backup/
+tar -xzf .multirepos/backup/archived/2025-12-modified.tar.gz \
+    -C .multirepos/backup/
 
 # Now files are in modified/2025/12/ - follow normal recovery steps
 ```
@@ -625,9 +625,9 @@ tar -xzf .workspaces/backup/archived/2025-12-modified.tar.gz \
 ```
 my-project/
 ├── .git/                    <- Parent project git
-├── .git.workspaces          <- Workspace manifest (tracked by parent)
+├── .git.multirepos          <- Workspace manifest (tracked by parent)
 ├── .gitignore               <- Contains "packages/lib/.git/"
-├── .workspaces/             <- Backups and patches (gitignored)
+├── .multirepos/             <- Backups and patches (gitignored)
 │   ├── backup/              <- Modified file backups
 │   └── patches/             <- Diff patches
 ├── src/
@@ -643,21 +643,21 @@ my-project/
 1. **Independent Git**: Each workspace has its own `.git` directory (local only)
 2. **Source Tracking**: Parent tracks workspace's source files (not `.git`)
 3. **Direct Push**: `cd packages/lib && git push` works as expected
-4. **Manifest File**: `.git.workspaces` records all workspaces for recreation
+4. **Manifest File**: `.git.multirepos` records all workspaces for recreation
 
 ### Workflow
 
 **Developer A adds a workspace:**
 ```bash
-git workspace clone https://github.com/user/lib.git packages/lib
+git multirepo clone https://github.com/user/lib.git packages/lib
 # Creates: packages/lib/.git/ (local)
 # Ignores: packages/lib/.git/ → .gitignore
 # Tracks: packages/lib/*.go → parent repo
-# Records: path, repo, commit hash → .git.workspaces
+# Records: path, repo, commit hash → .git.multirepos
 
 git add .
 git commit -m "Add lib workspace"
-git push  # Pushes: source files + .git.workspaces (NOT .git)
+git push  # Pushes: source files + .git.multirepos (NOT .git)
 ```
 
 **Developer A updates workspace:**
@@ -667,7 +667,7 @@ git commit && git push  # ← Must push to remote!
 
 cd ../..
 git add packages/lib/    # Stage updated source
-git workspace sync             # ← Auto-updates .git.workspaces with new commit!
+git multirepo sync             # ← Auto-updates .git.multirepos with new commit!
 git commit -m "Update lib"
 git push
 ```
@@ -675,11 +675,11 @@ git push
 **Developer B clones:**
 ```bash
 git clone <parent-repo>
-# Gets: .git.workspaces + source files
+# Gets: .git.multirepos + source files
 # Missing: packages/lib/.git/
 
-git workspace sync  # or use post-checkout hook
-# Reads: .git.workspaces commit hash
+git multirepo sync  # or use post-checkout hook
+# Reads: .git.multirepos commit hash
 # Restores: .git at exact commit
 # Now: cd packages/lib && git push works!
 ```
@@ -687,13 +687,13 @@ git workspace sync  # or use post-checkout hook
 **Key Points:**
 - `.git` directories are never pushed
 - Commit hashes ensure version consistency
-- `git workspace sync` handles everything automatically
+- `git multirepo sync` handles everything automatically
 - Unpushed commits trigger warnings
 
 ### Manifest Format
 
 ```yaml
-# .git.workspaces
+# .git.multirepos
 workspaces:
   - path: packages/lib
     repo: https://github.com/user/lib.git
@@ -710,7 +710,7 @@ Preserve local configuration files across syncs and pulls:
 **First sync with modifications:**
 ```bash
 # You have local changes: config.json, .env, settings.yml
-git workspace sync
+git multirepo sync
 
 # Output:
 # ✓ Found 3 modified files and added to keep list:
@@ -718,10 +718,10 @@ git workspace sync
 #   - .env
 #   - settings.yml
 #
-# Edit .git.workspaces to keep only the files you need
+# Edit .git.multirepos to keep only the files you need
 ```
 
-**.git.workspaces auto-updated:**
+**.git.multirepos auto-updated:**
 ```yaml
 workspaces:
   - path: apps/api
@@ -743,15 +743,15 @@ workspaces:
 ```
 
 **How it works:**
-- All modified files → patches created in `.workspaces/patches/`
+- All modified files → patches created in `.multirepos/patches/`
 - Keep files → restored with skip-worktree on pull/sync
 - Non-keep files → patches saved but not restored (git updates them)
-- Daily snapshots → `.workspaces/backup/` for history
+- Daily snapshots → `.multirepos/backup/` for history
 
 **Directory structure:**
 ```
-.git.workspaces                    # Configuration
-.workspaces/
+.git.multirepos                    # Configuration
+.multirepos/
 ├── patches/{workspace}/           # Latest patches (for restore)
 │   └── config.json.patch
 └── backup/                        # Historical backups

@@ -8,21 +8,21 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/yejune/git-workspace/internal/common"
-	"github.com/yejune/git-workspace/internal/git"
-	"github.com/yejune/git-workspace/internal/i18n"
+	"github.com/yejune/git-multirepo/internal/common"
+	"github.com/yejune/git-multirepo/internal/git"
+	"github.com/yejune/git-multirepo/internal/i18n"
 )
 
 var statusCmd = &cobra.Command{
 	Use:   "status [path]",
-	Short: "Show detailed status of workspaces",
-	Long: `Display comprehensive status information for each workspace:
+	Short: "Show detailed status of repositories",
+	Long: `Display comprehensive status information for each repository:
 
 Examples:
-  git workspace status              # Show status for all workspaces
-  git workspace status apps/admin   # Show status for specific workspace
+  git multirepo status              # Show status for all repositories
+  git multirepo status apps/admin   # Show status for specific repository
 
-For each workspace, shows:
+For each repository, shows:
   1. Local Status (modified, untracked, staged files)
   2. Remote Status (commits behind/ahead)
   3. How to resolve (step-by-step commands)`,
@@ -77,7 +77,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 			printRed(" %s\n", i18n.T("not_cloned"))
 			fmt.Println()
 			printBlue("  %s\n", i18n.T("how_to_resolve"))
-			printGray("    git workspace sync\n")
+			printGray("    git multirepo sync\n")
 			fmt.Println()
 			continue
 		}
@@ -181,7 +181,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 
 			if behindCount > 0 {
 				printYellow("    %s\n", i18n.T("resolve_pull"))
-				printGray("       git workspace pull %s\n", ws.Path)
+				printGray("       git multirepo pull %s\n", ws.Path)
 				fmt.Println()
 			}
 

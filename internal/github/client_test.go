@@ -15,28 +15,28 @@ func TestExtractOrgName(t *testing.T) {
 	}{
 		{
 			name: "https URL",
-			url:  "https://github.com/git-workspaces",
-			want: "git-workspaces",
+			url:  "https://github.com/git-multirepos",
+			want: "git-multirepos",
 		},
 		{
 			name: "http URL",
-			url:  "http://github.com/git-workspaces",
-			want: "git-workspaces",
+			url:  "http://github.com/git-multirepos",
+			want: "git-multirepos",
 		},
 		{
 			name: "URL without scheme",
-			url:  "github.com/git-workspaces",
-			want: "git-workspaces",
+			url:  "github.com/git-multirepos",
+			want: "git-multirepos",
 		},
 		{
 			name: "URL with trailing slash",
-			url:  "https://github.com/git-workspaces/",
-			want: "git-workspaces",
+			url:  "https://github.com/git-multirepos/",
+			want: "git-multirepos",
 		},
 		{
 			name: "URL with path segments",
-			url:  "https://github.com/git-workspaces/some/path",
-			want: "git-workspaces",
+			url:  "https://github.com/git-multirepos/some/path",
+			want: "git-multirepos",
 		},
 		{
 			name:    "empty URL",
@@ -81,13 +81,13 @@ func TestNewClient(t *testing.T) {
 		{
 			name:    "valid input",
 			token:   "test-token",
-			orgURL:  "https://github.com/git-workspaces",
-			wantOrg: "git-workspaces",
+			orgURL:  "https://github.com/git-multirepos",
+			wantOrg: "git-multirepos",
 		},
 		{
 			name:    "empty token",
 			token:   "",
-			orgURL:  "https://github.com/git-workspaces",
+			orgURL:  "https://github.com/git-multirepos",
 			wantErr: true,
 		},
 		{
@@ -274,7 +274,7 @@ func TestCreateRepository(t *testing.T) {
 
 func TestGetRepoURL(t *testing.T) {
 	client := &Client{
-		org: "git-workspaces",
+		org: "git-multirepos",
 	}
 
 	tests := []struct {
@@ -285,12 +285,12 @@ func TestGetRepoURL(t *testing.T) {
 		{
 			name:     "standard repo name",
 			repoName: "test-repo",
-			want:     "https://github.com/git-workspaces/test-repo.git",
+			want:     "https://github.com/git-multirepos/test-repo.git",
 		},
 		{
 			name:     "repo with dashes",
 			repoName: "my-awesome-repo",
-			want:     "https://github.com/git-workspaces/my-awesome-repo.git",
+			want:     "https://github.com/git-multirepos/my-awesome-repo.git",
 		},
 	}
 

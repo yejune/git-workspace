@@ -1,4 +1,4 @@
-// Package manifest handles .workspaces file operations
+// Package manifest handles .git.multirepos file operations
 package manifest
 
 import (
@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const FileName = ".git.workspaces"
+const FileName = ".git.multirepos"
 
 // marshalFunc is the function used to marshal YAML (allows testing)
 var marshalFunc = yaml.Marshal
@@ -24,7 +24,7 @@ type WorkspaceEntry struct {
 	Commit string   `yaml:"commit,omitempty"` // Deprecated: kept for backward compatibility, no longer used
 }
 
-// Manifest represents the .workspaces file structure
+// Manifest represents the .git.multirepos file structure
 type Manifest struct {
 	Language   string           `yaml:"language,omitempty"`
 	Keep       []string         `yaml:"keep,omitempty"`   // Mother repo: files to keep

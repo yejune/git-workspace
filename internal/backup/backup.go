@@ -24,14 +24,14 @@ func CreatePatchBackup(patchPath, backupDir string) error {
 	now := time.Now()
 	timestamp := now.Format("20060102_150405")
 
-	// Extract relative path from .workspaces/patches/ (handle both absolute and relative paths)
+	// Extract relative path from .multirepos/patches/ (handle both absolute and relative paths)
 	relPath := patchPath
-	// Try to find .workspaces/patches/ in the path
-	if idx := strings.Index(patchPath, ".workspaces/patches/"); idx != -1 {
-		relPath = patchPath[idx+len(".workspaces/patches/"):]
-	} else if idx := strings.Index(patchPath, ".workspaces-patches/"); idx != -1 {
+	// Try to find .multirepos/patches/ in the path
+	if idx := strings.Index(patchPath, ".multirepos/patches/"); idx != -1 {
+		relPath = patchPath[idx+len(".multirepos/patches/"):]
+	} else if idx := strings.Index(patchPath, ".multirepos-patches/"); idx != -1 {
 		// Fallback for old naming
-		relPath = patchPath[idx+len(".workspaces-patches/"):]
+		relPath = patchPath[idx+len(".multirepos-patches/"):]
 	}
 
 	// NEW: Check if today's backup with identical content exists

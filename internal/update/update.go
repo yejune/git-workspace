@@ -1,4 +1,4 @@
-// Package update provides self-update functionality for git-workspace
+// Package update provides self-update functionality for git-multirepo
 package update
 
 import (
@@ -45,7 +45,7 @@ type Updater struct {
 func NewUpdater(currentVersion string) *Updater {
 	return &Updater{
 		RepoOwner:      "yejune",
-		RepoName:       "git-workspace",
+		RepoName:       "git-multirepo",
 		CurrentVersion: currentVersion,
 		HTTPClient:     &http.Client{Timeout: 30 * time.Second},
 	}
@@ -119,7 +119,7 @@ func (u *Updater) getLatestRelease() (*GitHubRelease, error) {
 	}
 
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
-	req.Header.Set("User-Agent", "git-workspace-updater")
+	req.Header.Set("User-Agent", "git-multirepo-updater")
 
 	resp, err := u.HTTPClient.Do(req)
 	if err != nil {
@@ -157,7 +157,7 @@ func (u *Updater) getLatestRelease() (*GitHubRelease, error) {
 
 // getAssetName returns the expected asset name for the current platform
 func (u *Updater) getAssetName() string {
-	return fmt.Sprintf("git-workspace-%s-%s", runtime.GOOS, runtime.GOARCH)
+	return fmt.Sprintf("git-multirepo-%s-%s", runtime.GOOS, runtime.GOARCH)
 }
 
 // getExecutablePath returns the path to the current executable
@@ -182,7 +182,7 @@ func (u *Updater) downloadToTemp(url string) (string, error) {
 		return "", err
 	}
 
-	req.Header.Set("User-Agent", "git-workspace-updater")
+	req.Header.Set("User-Agent", "git-multirepo-updater")
 
 	resp, err := u.HTTPClient.Do(req)
 	if err != nil {
@@ -194,7 +194,7 @@ func (u *Updater) downloadToTemp(url string) (string, error) {
 		return "", fmt.Errorf("download failed with status %d", resp.StatusCode)
 	}
 
-	tempFile, err := os.CreateTemp("", "git-workspace-update-*")
+	tempFile, err := os.CreateTemp("", "git-multirepo-update-*")
 	if err != nil {
 		return "", err
 	}

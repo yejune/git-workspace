@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yejune/git-workspace/internal/manifest"
+	"github.com/yejune/git-multirepo/internal/manifest"
 )
 
 // ============ Basic Tests (3개) ============
@@ -58,7 +58,7 @@ func TestRunReset_BasicMotherRepo(t *testing.T) {
 		}
 
 		// Check backup created
-		backupDir := filepath.Join(dir, ".workspaces", "backup")
+		backupDir := filepath.Join(dir, ".multirepos", "backup")
 		if _, err := os.Stat(backupDir); os.IsNotExist(err) {
 			t.Error("backup directory should exist")
 		}
@@ -179,7 +179,7 @@ func TestRunReset_ErrorManifestLoad(t *testing.T) {
 	defer cleanup()
 
 	// Create invalid manifest
-	manifestPath := filepath.Join(dir, ".git.workspaces")
+	manifestPath := filepath.Join(dir, ".git.multirepos")
 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 
 	t.Run("reset with invalid manifest", func(t *testing.T) {
@@ -210,7 +210,7 @@ func TestRunReset_ErrorBackupCreation(t *testing.T) {
 	exec.Command("git", "-C", dir, "commit", "-m", "Add config").Run()
 
 	// Make backup directory unwritable
-	backupDir := filepath.Join(dir, ".workspaces", "backup")
+	backupDir := filepath.Join(dir, ".multirepos", "backup")
 	os.MkdirAll(backupDir, 0755)
 	os.Chmod(backupDir, 0444)
 	defer os.Chmod(backupDir, 0755)

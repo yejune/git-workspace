@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yejune/git-workspace/internal/config"
-	"github.com/yejune/git-workspace/internal/git"
+	"github.com/yejune/git-multirepo/internal/config"
+	"github.com/yejune/git-multirepo/internal/git"
 )
 
 // ============================================================================
@@ -20,7 +20,7 @@ func setupPushTestEnv(t *testing.T, org, prefix, suffix string) (string, func())
 	t.Helper()
 
 	tempDir := t.TempDir()
-	configPath := filepath.Join(tempDir, ".git.workspaces")
+	configPath := filepath.Join(tempDir, ".git.multirepos")
 
 	// Set up config
 	if org != "" {
@@ -109,7 +109,7 @@ func TestShouldEnablePushCommand_WithoutConfig(t *testing.T) {
 func TestShouldEnablePushCommand_NoOrganization(t *testing.T) {
 	t.Run("config exists but no organization", func(t *testing.T) {
 		tempDir := t.TempDir()
-		configPath := filepath.Join(tempDir, ".git.workspaces")
+		configPath := filepath.Join(tempDir, ".git.multirepos")
 
 		// Create empty config file
 		os.WriteFile(configPath, []byte(""), 0644)

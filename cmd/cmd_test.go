@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yejune/git-workspace/internal/hooks"
-	"github.com/yejune/git-workspace/internal/manifest"
+	"github.com/yejune/git-multirepo/internal/hooks"
+	"github.com/yejune/git-multirepo/internal/manifest"
 )
 
 // setupTestEnv creates a test environment with a git repository
@@ -501,8 +501,8 @@ func TestListEmpty(t *testing.T) {
 			runList(listCmd, []string{})
 		})
 
-		if !strings.Contains(output, "No workspaces registered") {
-			t.Errorf("should show no workspaces message, got: %s", output)
+		if !strings.Contains(output, "No repositories registered") {
+			t.Errorf("should show no repositories message, got: %s", output)
 		}
 	})
 }
@@ -516,8 +516,8 @@ func TestStatusEmpty(t *testing.T) {
 			runStatus(statusCmd, []string{})
 		})
 
-		if !strings.Contains(output, "No workspaces registered") {
-			t.Errorf("should show no workspaces message, got: %s", output)
+		if !strings.Contains(output, "No repositories registered") {
+			t.Errorf("should show no repositories message, got: %s", output)
 		}
 	})
 }
@@ -531,8 +531,8 @@ func TestSyncEmpty(t *testing.T) {
 			runSync(syncCmd, []string{})
 		})
 
-		if !strings.Contains(output, "No workspace repositories found") || !strings.Contains(output, "No .workspaces found") {
-			t.Errorf("should show no workspaces message, got: %s", output)
+		if !strings.Contains(output, "No repositories found") || !strings.Contains(output, "No .git.multirepos found") {
+			t.Errorf("should show no repositories message, got: %s", output)
 		}
 	})
 }
@@ -587,7 +587,7 @@ func TestExecute(t *testing.T) {
 	defer func() { os.Args = oldArgs }()
 
 	t.Run("execute with version flag", func(t *testing.T) {
-		os.Args = []string{"git-workspace", "--version"}
+		os.Args = []string{"git-multirepo", "--version"}
 		// Execute calls os.Exit on error, so we can't directly test failure paths
 		// But we can verify it doesn't panic
 		defer func() {
@@ -813,7 +813,7 @@ func TestStatusWithNotCloned(t *testing.T) {
 
 // TestSyncWithCloneError removed - sync no longer performs clone operations in v0.1.0
 // Sync only applies configuration (ignore/skip patterns)
-// Cloning is done via the main command: git-workspace <url> <path>
+// Cloning is done via the main command: git-multirepo <url> <path>
 
 func TestSyncDirRecursiveWithError(t *testing.T) {
 	dir, cleanup := setupTestEnv(t)
@@ -827,7 +827,7 @@ func TestSyncDirRecursiveWithError(t *testing.T) {
 
 	// Create invalid nested manifest
 	nestedDir := filepath.Join(dir, "packages/nested")
-	nestedManifest := filepath.Join(nestedDir, ".workspaces")
+	nestedManifest := filepath.Join(nestedDir, ".git.multirepos")
 	os.WriteFile(nestedManifest, []byte("invalid: yaml: [[["), 0644)
 
 	// Recursive sync test removed - syncRecursive flag not exposed in v0.1.0
@@ -919,7 +919,7 @@ func TestRemoveWithManifestSaveError(t *testing.T) {
 	runClone(cloneCmd, []string{remoteRepo, "packages/remove-error"})
 
 	// Make manifest file read-only
-	manifestPath := filepath.Join(dir, ".git.workspaces")
+	manifestPath := filepath.Join(dir, ".git.multirepos")
 	os.Chmod(manifestPath, 0444)
 	defer os.Chmod(manifestPath, 0644) // Restore for cleanup
 
@@ -1296,7 +1296,7 @@ func TestRemoveGitignoreError(t *testing.T) {
 
 		output := captureOutput(func() {
 			// This test needs manifest to be writable
-			manifestPath := filepath.Join(dir, ".git.workspaces")
+			manifestPath := filepath.Join(dir, ".git.multirepos")
 			os.Chmod(manifestPath, 0644)
 
 			// Need to reload after chmod
@@ -1391,7 +1391,7 @@ func TestPushAllWithPushError(t *testing.T) {
 // 	manifest.Save(dir, m)
 // 
 // 	// Make manifest read-only
-// 	manifestPath := filepath.Join(dir, ".git.workspaces")
+// 	manifestPath := filepath.Join(dir, ".git.multirepos")
 // 	os.Chmod(manifestPath, 0444)
 // 	defer os.Chmod(manifestPath, 0644)
 // 
@@ -1465,7 +1465,7 @@ func TestRootWithManifestSaveError(t *testing.T) {
 	manifest.Save(dir, m)
 
 	// Make manifest read-only
-	manifestPath := filepath.Join(dir, ".git.workspaces")
+	manifestPath := filepath.Join(dir, ".git.multirepos")
 	os.Chmod(manifestPath, 0444)
 	defer os.Chmod(manifestPath, 0644)
 
@@ -1516,7 +1516,7 @@ func TestListDirWithManifestLoadError(t *testing.T) {
 	defer cleanup()
 
 	// Create invalid manifest
-	manifestPath := filepath.Join(dir, ".git.workspaces")
+	manifestPath := filepath.Join(dir, ".git.multirepos")
 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 
 	t.Run("listDir with manifest load error", func(t *testing.T) {
@@ -1533,7 +1533,7 @@ func TestSyncDirWithManifestLoadError(t *testing.T) {
 	defer cleanup()
 
 	// Create invalid manifest
-	manifestPath := filepath.Join(dir, ".git.workspaces")
+	manifestPath := filepath.Join(dir, ".git.multirepos")
 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 
 	t.Run("syncDir with manifest load error", func(t *testing.T) {
@@ -1550,7 +1550,7 @@ func TestStatusWithManifestLoadError(t *testing.T) {
 	defer cleanup()
 
 	// Create invalid manifest
-	manifestPath := filepath.Join(dir, ".git.workspaces")
+	manifestPath := filepath.Join(dir, ".git.multirepos")
 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 
 	t.Run("status with manifest load error", func(t *testing.T) {
@@ -1569,7 +1569,7 @@ func TestPushWithManifestLoadError(t *testing.T) {
 	defer cleanup()
 
 	// Create invalid manifest
-	manifestPath := filepath.Join(dir, ".git.workspaces")
+	manifestPath := filepath.Join(dir, ".git.multirepos")
 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 
 	t.Run("push with manifest load error", func(t *testing.T) {
@@ -1590,7 +1590,7 @@ func TestRemoveWithManifestLoadError(t *testing.T) {
 	defer cleanup()
 
 	// Create invalid manifest
-	manifestPath := filepath.Join(dir, ".git.workspaces")
+	manifestPath := filepath.Join(dir, ".git.multirepos")
 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 
 	t.Run("remove with manifest load error", func(t *testing.T) {
@@ -1611,7 +1611,7 @@ func TestRootWithManifestLoadError(t *testing.T) {
 	remoteRepo := setupRemoteRepo(t)
 
 	// Create invalid manifest
-	manifestPath := filepath.Join(dir, ".git.workspaces")
+	manifestPath := filepath.Join(dir, ".git.multirepos")
 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 
 	t.Run("root with manifest load error", func(t *testing.T) {
@@ -1634,7 +1634,7 @@ func TestRootWithManifestLoadError(t *testing.T) {
 // 	remoteRepo := setupRemoteRepo(t)
 // 
 // 	// Create invalid manifest
-// 	manifestPath := filepath.Join(dir, ".git.workspaces")
+// 	manifestPath := filepath.Join(dir, ".git.multirepos")
 // 	os.WriteFile(manifestPath, []byte("invalid: yaml: [[["), 0644)
 // 
 // 	t.Run("add with manifest load error", func(t *testing.T) {
@@ -2009,7 +2009,7 @@ func TestListDirRecursiveError(t *testing.T) {
 
 	// Create nested manifest that triggers error
 	nestedDir := filepath.Join(dir, "packages/recursive-err")
-	nestedManifest := filepath.Join(nestedDir, ".workspaces")
+	nestedManifest := filepath.Join(nestedDir, ".git.multirepos")
 	// Write manifest that will cause an error in listDir
 	os.WriteFile(nestedManifest, []byte("invalid: [[["), 0644)
 
@@ -2186,7 +2186,7 @@ func TestRootCmdExecute(t *testing.T) {
 		})
 
 		// Should show help/usage
-		if !strings.Contains(output, "git-workspace") {
+		if !strings.Contains(output, "git-multirepo") {
 			t.Logf("output: %s", output)
 		}
 	})

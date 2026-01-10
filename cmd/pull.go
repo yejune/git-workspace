@@ -1,4 +1,4 @@
-// Package cmd implements the CLI commands for git-workspace
+// Package cmd implements the CLI commands for git-multirepo
 package cmd
 
 import (
@@ -7,24 +7,24 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/yejune/git-workspace/internal/backup"
-	"github.com/yejune/git-workspace/internal/common"
-	"github.com/yejune/git-workspace/internal/git"
-	"github.com/yejune/git-workspace/internal/i18n"
-	"github.com/yejune/git-workspace/internal/interactive"
-	"github.com/yejune/git-workspace/internal/patch"
+	"github.com/yejune/git-multirepo/internal/backup"
+	"github.com/yejune/git-multirepo/internal/common"
+	"github.com/yejune/git-multirepo/internal/git"
+	"github.com/yejune/git-multirepo/internal/i18n"
+	"github.com/yejune/git-multirepo/internal/interactive"
+	"github.com/yejune/git-multirepo/internal/patch"
 )
 
 var pullCmd = &cobra.Command{
 	Use:   "pull [path]",
-	Short: "Pull latest changes for workspaces",
-	Long: `Pull latest changes for registered workspaces.
+	Short: "Pull latest changes for repositories",
+	Long: `Pull latest changes for registered repositories.
 
 Examples:
-  git workspace pull              # Pull all workspaces with confirmation
-  git workspace pull apps/admin   # Pull specific workspace only
+  git multirepo pull              # Pull all repositories with confirmation
+  git multirepo pull apps/admin   # Pull specific repository only
 
-For each workspace:
+For each repository:
   1. Shows current branch and uncommitted files
   2. Asks for confirmation (Y/n)
   3. Pulls from remote
@@ -168,8 +168,8 @@ func handleKeepFilesWork(wsPath, branch string, keepFiles []string, repoRoot str
 			continue // No remote changes, skip
 		}
 
-		// Create patch directory in .workspaces/patches/{workspace-path}/
-		patchDir := filepath.Join(repoRoot, ".workspaces", "patches", workspacePath)
+		// Create patch directory in .multirepos/patches/{workspace-path}/
+		patchDir := filepath.Join(repoRoot, ".multirepos", "patches", workspacePath)
 		if err := os.MkdirAll(patchDir, 0755); err != nil {
 			return fmt.Errorf("failed to create patch directory: %w", err)
 		}
@@ -191,7 +191,7 @@ func handleKeepFilesWork(wsPath, branch string, keepFiles []string, repoRoot str
 			switch choice {
 			case 0: // Update origin and reapply patch (recommended)
 				// Backup original file
-				backupDir := filepath.Join(repoRoot, ".workspaces", "backup")
+				backupDir := filepath.Join(repoRoot, ".multirepos", "backup")
 				if err := backup.CreateFileBackup(filepath.Join(wsPath, file), backupDir, repoRoot); err != nil {
 					return fmt.Errorf("backup failed for %s: %w", file, err)
 				}
