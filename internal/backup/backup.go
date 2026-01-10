@@ -1,10 +1,13 @@
 package backup
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -29,6 +32,19 @@ func CreatePatchBackup(patchPath, backupDir string) error {
 	} else if idx := strings.Index(patchPath, ".workspaces-patches/"); idx != -1 {
 		// Fallback for old naming
 		relPath = patchPath[idx+len(".workspaces-patches/"):]
+	}
+
+	// NEW: Check if today's backup with identical content exists
+	todayDir := filepath.Join(backupDir, "patched", now.Format("2006"), now.Format("01"), now.Format("02"))
+	latestBackup := findLatestBackup(todayDir, relPath)
+
+	// NEW: Compare with latest backup
+	if latestBackup != "" {
+		identical, err := filesIdentical(patchPath, latestBackup)
+		if err == nil && identical {
+			// Skip: content is identical to latest backup
+			return nil
+		}
 	}
 
 	// Build backup path: backup/patched/yyyy/mm/dd/...
@@ -78,6 +94,19 @@ func CreateFileBackup(filePath, backupDir, repoRoot string) error {
 		if err != nil {
 			// Fallback: use the original path if we can't make it relative
 			relPath = filePath
+		}
+	}
+
+	// NEW: Check if today's backup with identical content exists
+	todayDir := filepath.Join(backupDir, "modified", now.Format("2006"), now.Format("01"), now.Format("02"))
+	latestBackup := findLatestBackup(todayDir, relPath)
+
+	// NEW: Compare with latest backup
+	if latestBackup != "" {
+		identical, err := filesIdentical(filePath, latestBackup)
+		if err == nil && identical {
+			// Skip: content is identical to latest backup
+			return nil
 		}
 	}
 
@@ -160,4 +189,79 @@ func copyFile(src, dst string) error {
 	}
 
 	return nil
+}
+
+// sha256File calculates SHA256 hash of a file
+func sha256File(filePath string) (string, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// filesIdentical checks if two files have identical content using SHA256
+func filesIdentical(file1, file2 string) (bool, error) {
+	hash1, err := sha256File(file1)
+	if err != nil {
+		return false, err
+	}
+
+	hash2, err := sha256File(file2)
+	if err != nil {
+		return false, err
+	}
+
+	return hash1 == hash2, nil
+}
+
+// findLatestBackup finds the most recent backup of a file in today's directory
+// Returns empty string if no backup found
+func findLatestBackup(todayDir, relPath string) string {
+	// Build pattern: todayDir/relPath_without_ext.*.ext
+	targetDir := filepath.Join(todayDir, filepath.Dir(relPath))
+	if _, err := os.Stat(targetDir); os.IsNotExist(err) {
+		return "" // Directory doesn't exist
+	}
+
+	base := filepath.Base(relPath)
+	ext := filepath.Ext(base)
+	nameWithoutExt := strings.TrimSuffix(base, ext)
+
+	// List all files in directory
+	entries, err := os.ReadDir(targetDir)
+	if err != nil {
+		return ""
+	}
+
+	// Find files matching pattern: nameWithoutExt.TIMESTAMP.ext
+	var matches []string
+	prefix := nameWithoutExt + "."
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		name := entry.Name()
+		// Check if it matches: name.YYYYMMDD_HHMMSS.ext
+		if strings.HasPrefix(name, prefix) && strings.HasSuffix(name, ext) {
+			matches = append(matches, filepath.Join(targetDir, name))
+		}
+	}
+
+	if len(matches) == 0 {
+		return ""
+	}
+
+	// Sort by filename (timestamp is in filename) - latest last
+	sort.Strings(matches)
+	return matches[len(matches)-1]
 }
