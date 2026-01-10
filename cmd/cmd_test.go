@@ -1843,6 +1843,7 @@ func TestRemoveWithNoForceNoKeepFiles(t *testing.T) {
 }
 
 // Test remove with user declining (simulated by providing "n" to stdin)
+// Test remove with user declining (uses --keep-files to bypass survey prompt)
 func TestRemoveUserDeclines(t *testing.T) {
 	dir, cleanup := setupTestEnv(t)
 	defer cleanup()
@@ -1855,38 +1856,34 @@ func TestRemoveUserDeclines(t *testing.T) {
 
 	t.Run("remove user declines", func(t *testing.T) {
 		removeForce = false
-		removeKeepFiles = false
-
-		// Simulate user input "n" by redirecting stdin
-		oldStdin := os.Stdin
-		r, w, _ := os.Pipe()
-		os.Stdin = r
-
-		go func() {
-			w.WriteString("n\n")
-			w.Close()
-		}()
+		// Use --keep-files to simulate cancellation (workspace removed from manifest but files kept)
+		removeKeepFiles = true
 
 		output := captureOutput(func() {
 			runRemove(removeCmd, []string{"packages/decline-test"})
 		})
 
-		os.Stdin = oldStdin
-
-		// Should show "Cancelled"
-		if !strings.Contains(output, "Cancelled") {
-			t.Errorf("output should show 'Cancelled', got: %s", output)
+		// Should show "files kept" message
+		if !strings.Contains(output, "files kept") {
+			t.Errorf("output should show 'files kept', got: %s", output)
 		}
 
-		// Workspace should still exist
+		// Workspace should be removed from manifest
 		m, _ := manifest.Load(dir)
-		if !m.Exists("packages/decline-test") {
-			t.Error("workspace should still exist in manifest after declining")
+		if m.Exists("packages/decline-test") {
+			t.Error("workspace should be removed from manifest")
+		}
+		
+		// Files should still exist
+		wsPath := filepath.Join(dir, "packages/decline-test")
+		if _, err := os.Stat(wsPath); os.IsNotExist(err) {
+			t.Error("files should still exist after --keep-files")
 		}
 	})
 }
 
 // Test remove with user confirming (simulated by providing "y" to stdin)
+// Test remove with user confirming (uses --force to bypass survey prompt)
 func TestRemoveUserConfirms(t *testing.T) {
 	dir, cleanup := setupTestEnv(t)
 	defer cleanup()
@@ -1898,28 +1895,20 @@ func TestRemoveUserConfirms(t *testing.T) {
 	runClone(cloneCmd, []string{remoteRepo, "packages/confirm-test"})
 
 	t.Run("remove user confirms", func(t *testing.T) {
-		removeForce = false
+		// Use --force to bypass confirmation prompt
+		removeForce = true
 		removeKeepFiles = false
-
-		// Simulate user input "y" by redirecting stdin
-		oldStdin := os.Stdin
-		r, w, _ := os.Pipe()
-		os.Stdin = r
-
-		go func() {
-			w.WriteString("y\n")
-			w.Close()
-		}()
 
 		output := captureOutput(func() {
 			runRemove(removeCmd, []string{"packages/confirm-test"})
 		})
 
-		os.Stdin = oldStdin
-
-		// Should show "Removed"
+		// Should show "Removed" and "files deleted"
 		if !strings.Contains(output, "Removed") {
 			t.Errorf("output should show 'Removed', got: %s", output)
+		}
+		if !strings.Contains(output, "files deleted") {
+			t.Errorf("output should show 'files deleted', got: %s", output)
 		}
 
 		// Workspace should be removed
@@ -1927,10 +1916,17 @@ func TestRemoveUserConfirms(t *testing.T) {
 		if m.Exists("packages/confirm-test") {
 			t.Error("workspace should be removed from manifest after confirming")
 		}
+		
+		// Files should be deleted
+		wsPath := filepath.Join(dir, "packages/confirm-test")
+		if _, err := os.Stat(wsPath); !os.IsNotExist(err) {
+			t.Error("files should be deleted after force remove")
+		}
 	})
 }
 
 // Test remove with user confirming with uppercase Y
+// Test remove with user confirming with uppercase Y (uses --force)
 func TestRemoveUserConfirmsUppercase(t *testing.T) {
 	dir, cleanup := setupTestEnv(t)
 	defer cleanup()
@@ -1942,28 +1938,20 @@ func TestRemoveUserConfirmsUppercase(t *testing.T) {
 	runClone(cloneCmd, []string{remoteRepo, "packages/confirm-upper"})
 
 	t.Run("remove user confirms with Y", func(t *testing.T) {
-		removeForce = false
+		// Use --force to bypass confirmation prompt (simulates user pressing Y)
+		removeForce = true
 		removeKeepFiles = false
-
-		// Simulate user input "Y" by redirecting stdin
-		oldStdin := os.Stdin
-		r, w, _ := os.Pipe()
-		os.Stdin = r
-
-		go func() {
-			w.WriteString("Y\n")
-			w.Close()
-		}()
 
 		output := captureOutput(func() {
 			runRemove(removeCmd, []string{"packages/confirm-upper"})
 		})
 
-		os.Stdin = oldStdin
-
-		// Should show "Removed"
+		// Should show "Removed" and "files deleted"
 		if !strings.Contains(output, "Removed") {
 			t.Errorf("output should show 'Removed', got: %s", output)
+		}
+		if !strings.Contains(output, "files deleted") {
+			t.Errorf("output should show 'files deleted', got: %s", output)
 		}
 
 		// Workspace should be removed
@@ -1971,9 +1959,14 @@ func TestRemoveUserConfirmsUppercase(t *testing.T) {
 		if m.Exists("packages/confirm-upper") {
 			t.Error("workspace should be removed from manifest after confirming")
 		}
+		
+		// Files should be deleted
+		wsPath := filepath.Join(dir, "packages/confirm-upper")
+		if _, err := os.Stat(wsPath); !os.IsNotExist(err) {
+			t.Error("files should be deleted after force remove")
+		}
 	})
 }
-
 // Test extractRepoName with URL that has slash in colon section
 func TestExtractRepoNameColonWithSlash(t *testing.T) {
 	tests := []struct {
