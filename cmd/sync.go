@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/yejune/git-workspace/internal/backup"
+	"github.com/yejune/git-workspace/internal/common"
 	"github.com/yejune/git-workspace/internal/git"
 	"github.com/yejune/git-workspace/internal/hooks"
 	"github.com/yejune/git-workspace/internal/i18n"
@@ -36,53 +37,41 @@ func init() {
 }
 
 func runSync(cmd *cobra.Command, args []string) error {
-	repoRoot, err := git.GetRepoRoot()
+	// Use common context loading pattern
+	ctx, err := common.LoadWorkspaceContext()
 	if err != nil {
-		return fmt.Errorf("not in a git repository: %w", err)
-	}
-
-	// Load manifest early to get language setting
-	m, err := manifest.Load(repoRoot)
-	if err == nil {
-		i18n.SetLanguage(m.GetLanguage())
+		return err
 	}
 
 	fmt.Println(i18n.T("syncing"))
 
 	// 1. Auto-install hooks
-	if !hooks.IsInstalled(repoRoot) {
+	if !hooks.IsInstalled(ctx.RepoRoot) {
 		fmt.Println(i18n.T("installing_hooks"))
-		if err := hooks.Install(repoRoot); err != nil {
+		if err := hooks.Install(ctx.RepoRoot); err != nil {
 			fmt.Printf("  %s\n", i18n.T("hooks_failed", err))
 		} else {
 			fmt.Printf("  %s\n", i18n.T("hooks_installed"))
 		}
 	}
 
-	// 2. Handle manifest load error
-	if err != nil {
-		// manifest.Load only returns error if file is corrupted or has read error
-		// (it returns empty manifest with no error if file doesn't exist)
-		return fmt.Errorf("failed to load manifest: %w", err)
-	}
-
-	// 3. If no workspaces in manifest, scan for existing sub repos
-	if len(m.Workspaces) == 0 {
+	// 2. If no workspaces in manifest, scan for existing sub repos
+	if len(ctx.Manifest.Workspaces) == 0 {
 		fmt.Println(i18n.T("no_gitsubs_found"))
-		discovered, scanErr := scanForWorkspaces(repoRoot)
+		discovered, scanErr := scanForWorkspaces(ctx.RepoRoot)
 		if scanErr != nil {
 			return fmt.Errorf(i18n.T("failed_scan"), scanErr)
 		}
 
 		if len(discovered) > 0 {
 			// Create manifest from discovered workspaces
-			m = &manifest.Manifest{
+			ctx.Manifest = &manifest.Manifest{
 				Workspaces: discovered,
-				Ignore:     m.Ignore, // Preserve ignore patterns
-				Keep:       m.Keep,   // Preserve keep files
+				Ignore:     ctx.Manifest.Ignore, // Preserve ignore patterns
+				Keep:       ctx.Manifest.Keep,   // Preserve keep files
 			}
 
-			if err := manifest.Save(repoRoot, m); err != nil {
+			if err := ctx.SaveManifest(); err != nil {
 				return fmt.Errorf("failed to save manifest: %w", err)
 			}
 
@@ -99,24 +88,24 @@ func runSync(cmd *cobra.Command, args []string) error {
 	}
 
 	// 3. Apply ignore patterns to mother repo
-	if len(m.Ignore) > 0 {
+	if len(ctx.Manifest.Ignore) > 0 {
 		fmt.Println(i18n.T("applying_ignore"))
-		if err := git.AddIgnorePatternsToGitignore(repoRoot, m.Ignore); err != nil {
+		if err := git.AddIgnorePatternsToGitignore(ctx.RepoRoot, ctx.Manifest.Ignore); err != nil {
 			fmt.Printf("  %s\n", i18n.T("hooks_failed", err))
 		} else {
-			fmt.Printf("  %s\n", i18n.T("applied_patterns", len(m.Ignore)))
+			fmt.Printf("  %s\n", i18n.T("applied_patterns", len(ctx.Manifest.Ignore)))
 		}
 	}
 
 	// 4. Process Mother repo keep files
 	issues := 0
-	motherKeepFiles := m.Keep
+	motherKeepFiles := ctx.Manifest.Keep
 	if len(motherKeepFiles) > 0 {
 		fmt.Printf("\n%s\n", i18n.T("processing_mother_keep"))
-		processKeepFiles(repoRoot, repoRoot, motherKeepFiles, &issues)
+		processKeepFiles(ctx.RepoRoot, ctx.RepoRoot, motherKeepFiles, &issues)
 	}
 
-	if len(m.Workspaces) == 0 {
+	if len(ctx.Manifest.Workspaces) == 0 {
 		fmt.Println(i18n.T("no_subclones"))
 		return nil
 	}
@@ -124,8 +113,8 @@ func runSync(cmd *cobra.Command, args []string) error {
 	// 5. Process each workspace
 	fmt.Println(i18n.T("processing_subclones"))
 
-	for _, ws := range m.Workspaces {
-		fullPath := filepath.Join(repoRoot, ws.Path)
+	for _, ws := range ctx.Manifest.Workspaces {
+		fullPath := filepath.Join(ctx.RepoRoot, ws.Path)
 		fmt.Printf("\n  %s\n", ws.Path)
 
 		// Check if workspace exists
@@ -143,7 +132,7 @@ func runSync(cmd *cobra.Command, args []string) error {
 				}
 
 				// Add to .gitignore
-				if err := git.AddToGitignore(repoRoot, ws.Path); err != nil {
+				if err := git.AddToGitignore(ctx.RepoRoot, ws.Path); err != nil {
 					fmt.Printf("    %s\n", i18n.T("failed_update_gitignore", err))
 				}
 
@@ -170,7 +159,7 @@ func runSync(cmd *cobra.Command, args []string) error {
 			}
 
 			// Add to .gitignore
-			if err := git.AddToGitignore(repoRoot, ws.Path); err != nil {
+			if err := git.AddToGitignore(ctx.RepoRoot, ws.Path); err != nil {
 				fmt.Printf("    %s\n", i18n.T("failed_update_gitignore", err))
 			}
 
@@ -179,9 +168,9 @@ func runSync(cmd *cobra.Command, args []string) error {
 		}
 
 		// Verify and fix .gitignore entry
-		if !hasGitignoreEntry(repoRoot, ws.Path) {
+		if !hasGitignoreEntry(ctx.RepoRoot, ws.Path) {
 			fmt.Printf("    %s\n", i18n.T("adding_to_gitignore"))
-			if err := git.AddToGitignore(repoRoot, ws.Path); err != nil {
+			if err := git.AddToGitignore(ctx.RepoRoot, ws.Path); err != nil {
 				fmt.Printf("    %s\n", i18n.T("hooks_failed", err))
 				issues++
 			} else {
@@ -193,7 +182,7 @@ func runSync(cmd *cobra.Command, args []string) error {
 		keepFiles := ws.Keep
 		if len(keepFiles) > 0 {
 			fmt.Printf("    %s\n", i18n.T("processing_keep_files", len(keepFiles)))
-			processKeepFiles(repoRoot, fullPath, keepFiles, &issues)
+			processKeepFiles(ctx.RepoRoot, fullPath, keepFiles, &issues)
 		}
 
 		// Install/update post-commit hook in workspace
@@ -208,12 +197,12 @@ func runSync(cmd *cobra.Command, args []string) error {
 	}
 
 	// Save manifest if any commits were updated
-	if err := manifest.Save(repoRoot, m); err != nil {
+	if err := ctx.SaveManifest(); err != nil {
 		return fmt.Errorf("failed to save manifest: %w", err)
 	}
 
 	// 6. Check if archiving should run (24 hours check)
-	workspacesDir := filepath.Join(repoRoot, ".workspaces")
+	workspacesDir := filepath.Join(ctx.RepoRoot, ".workspaces")
 	if backup.ShouldRunArchive(workspacesDir) {
 		backupDir := filepath.Join(workspacesDir, "backup")
 		if err := backup.ArchiveOldBackups(backupDir); err != nil {
@@ -303,9 +292,15 @@ func scanForWorkspaces(repoRoot string) ([]manifest.WorkspaceEntry, error) {
 		if err == nil && len(skipFiles) > 0 {
 			keepFiles = skipFiles
 		} else {
-			// Fallback: detect modified files for first-time setup
-			modifiedFiles, err := git.GetModifiedFiles(workspacePath)
-			if err == nil && len(modifiedFiles) > 0 {
+			// Fallback: detect modified files for first-time setup (no keep files yet, so no transaction needed)
+			// Transaction is safe even with empty keepFiles (it will just execute workFunc directly)
+			var modifiedFiles []string
+			git.WithSkipWorktreeTransaction(workspacePath, []string{}, func() error {
+				var err error
+				modifiedFiles, err = git.GetModifiedFiles(workspacePath)
+				return err
+			})
+			if len(modifiedFiles) > 0 {
 				// Clean up file list
 				for _, file := range modifiedFiles {
 					if strings.TrimSpace(file) != "" {
@@ -364,118 +359,103 @@ func processKeepFiles(repoRoot, workspacePath string, keepFiles []string, issues
 	os.RemoveAll(patchedDir)
 	os.MkdirAll(patchedDir, 0755)
 
-	// 3. Get ALL modified files (not just Keep files)
-	modifiedFiles, err := git.GetModifiedFiles(workspacePath)
-	if err != nil {
-		fmt.Printf("        Failed to get modified files: %v\n", err)
-		*issues++
-		return
-	}
-
-	// Remove empty strings from the list
-	var cleanModifiedFiles []string
-	for _, file := range modifiedFiles {
-		if strings.TrimSpace(file) != "" {
-			cleanModifiedFiles = append(cleanModifiedFiles, file)
-		}
-	}
-	modifiedFiles = cleanModifiedFiles
-
-	// 4. Auto-populate Keep list if empty and there are modified files
-	if len(keepFiles) == 0 && len(modifiedFiles) > 0 {
-		// Load manifest to update it
-		m, loadErr := manifest.Load(repoRoot)
-		if loadErr != nil {
-			fmt.Printf("        Failed to load manifest: %v\n", loadErr)
-			*issues++
-			return
+	// 3. Process ALL modified files within a single transaction
+	var modifiedFiles []string
+	err = git.WithSkipWorktreeTransaction(workspacePath, keepFiles, func() error {
+		// 3a. Get modified files
+		var err error
+		modifiedFiles, err = git.GetModifiedFiles(workspacePath)
+		if err != nil {
+			return err
 		}
 
-		// Update the keep list in manifest
-		if relPath == "" || relPath == "." {
-			// Mother repo
-			m.Keep = modifiedFiles
-		} else {
-			// Workspace entry
-			for i := range m.Workspaces {
-				if m.Workspaces[i].Path == relPath {
-					m.Workspaces[i].Keep = modifiedFiles
-					break
-				}
+		// Remove empty strings from the list
+		var cleanModifiedFiles []string
+		for _, file := range modifiedFiles {
+			if strings.TrimSpace(file) != "" {
+				cleanModifiedFiles = append(cleanModifiedFiles, file)
 			}
 		}
+		modifiedFiles = cleanModifiedFiles
 
-		// Save manifest
-		if saveErr := manifest.Save(repoRoot, m); saveErr != nil {
-			fmt.Printf("        Failed to save manifest: %v\n", saveErr)
-			*issues++
-			return
+		// 3b. Auto-populate Keep list if empty and there are modified files
+		if len(keepFiles) == 0 && len(modifiedFiles) > 0 {
+			// Load manifest to update it
+			m, loadErr := manifest.Load(repoRoot)
+			if loadErr != nil {
+				return fmt.Errorf("failed to load manifest: %w", loadErr)
+			}
+
+			// Update the keep list in manifest
+			if relPath == "" || relPath == "." {
+				// Mother repo
+				m.Keep = modifiedFiles
+			} else {
+				// Workspace entry
+				for i := range m.Workspaces {
+					if m.Workspaces[i].Path == relPath {
+						m.Workspaces[i].Keep = modifiedFiles
+						break
+					}
+				}
+			}
+
+			// Save manifest
+			if saveErr := manifest.Save(repoRoot, m); saveErr != nil {
+				return fmt.Errorf("failed to save manifest: %w", saveErr)
+			}
+
+			// Update keepFiles for this run (will be re-applied by defer)
+			keepFiles = modifiedFiles
+
+			fmt.Printf("\n✓ Found %d modified files and added to keep list:\n", len(modifiedFiles))
+			for _, f := range modifiedFiles {
+				fmt.Printf("  - %s\n", f)
+			}
+			fmt.Println("\nEdit .git.workspaces to keep only the files you need")
 		}
 
-		// Update keepFiles for this run
-		keepFiles = modifiedFiles
-
-		fmt.Printf("\n✓ Found %d modified files and added to keep list:\n", len(modifiedFiles))
-		for _, f := range modifiedFiles {
-			fmt.Printf("  - %s\n", f)
-		}
-		fmt.Println("\nEdit .git.workspaces to keep only the files you need")
-	}
-
-	// 5. Process ALL modified files (backup + patch for all)
-	for _, file := range modifiedFiles {
-		filePath := filepath.Join(workspacePath, file)
-
-		// Check if file exists
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			continue // Skip if file doesn't exist
-		}
-
-		// 5a. Backup original file to backup/modified/
-		if err := backup.CreateFileBackup(filePath, backupDir, repoRoot); err != nil {
-			fmt.Printf("        Failed to backup %s: %v\n", file, err)
-			*issues++
-			continue
-		}
-
-		// 5b. Create patch (git diff HEAD file)
-		patchPath := filepath.Join(patchBaseDir, relPath, file+".patch")
-		if err := patch.Create(workspacePath, file, patchPath); err != nil {
-			fmt.Printf("        Failed to create patch for %s: %v\n", file, err)
-			*issues++
-			continue
-		}
-
-		// 5c. Backup patch to backup/patched/
-		if err := backup.CreatePatchBackup(patchPath, backupDir); err != nil {
-			fmt.Printf("        Failed to backup patch for %s: %v\n", file, err)
-			*issues++
-			continue
-		}
-	}
-
-	// 6. Apply skip-worktree ONLY to Keep files
-	if len(keepFiles) > 0 {
-		fmt.Printf("        Applying skip-worktree to %d keep files...\n", len(keepFiles))
-		for _, file := range keepFiles {
+		// 3c. Process ALL modified files (backup + patch for all)
+		for _, file := range modifiedFiles {
 			filePath := filepath.Join(workspacePath, file)
 
 			// Check if file exists
-			if _, err := os.Stat(filePath); os.IsNotExist(err) {
-				fmt.Printf("        %s (skip: file not found)\n", file)
-				continue
+			if _, statErr := os.Stat(filePath); os.IsNotExist(statErr) {
+				continue // Skip if file doesn't exist
 			}
 
-			// Apply skip-worktree
-			if err := git.ApplySkipWorktree(workspacePath, []string{file}); err != nil {
-				fmt.Printf("        Failed to apply skip-worktree to %s: %v\n", file, err)
+			// Backup original file to backup/modified/
+			if backupErr := backup.CreateFileBackup(filePath, backupDir, repoRoot); backupErr != nil {
+				fmt.Printf("        Failed to backup %s: %v\n", file, backupErr)
 				*issues++
 				continue
 			}
 
-			fmt.Printf("        ✓ %s (skip-worktree applied)\n", file)
+			// Create patch (git diff HEAD file)
+			patchPath := filepath.Join(patchBaseDir, relPath, file+".patch")
+			if patchErr := patch.Create(workspacePath, file, patchPath); patchErr != nil {
+				fmt.Printf("        Failed to create patch for %s: %v\n", file, patchErr)
+				*issues++
+				continue
+			}
+
+			// Backup patch to backup/patched/
+			if patchBackupErr := backup.CreatePatchBackup(patchPath, backupDir); patchBackupErr != nil {
+				fmt.Printf("        Failed to backup patch for %s: %v\n", file, patchBackupErr)
+				*issues++
+				continue
+			}
 		}
+
+		return nil
+	})
+	if err != nil {
+		fmt.Printf("        Failed to process keep files: %v\n", err)
+		*issues++
+		return
 	}
+
+	// Note: defer in WithSkipWorktreeTransaction automatically re-applies skip-worktree to keepFiles
 
 	// Summary message
 	if len(modifiedFiles) > 0 {

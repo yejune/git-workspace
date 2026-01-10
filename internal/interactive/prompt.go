@@ -109,3 +109,29 @@ func SelectFiles(files []string) ([]string, error) {
 
 	return selected, nil
 }
+
+// ConfirmYesNo prompts user with Y/n (default: yes)
+// Returns true if user presses Enter or types y/yes
+func ConfirmYesNo(message string) (bool, error) {
+	result := true // Default to yes
+	prompt := &survey.Confirm{
+		Message: message,
+		Default: true,
+	}
+
+	err := survey.AskOne(prompt, &result)
+	return result, err
+}
+
+// ConfirmYN prompts user with y/N (default: no)
+// Returns true only if user explicitly types y/yes
+func ConfirmYN(message string) (bool, error) {
+	result := false // Default to no
+	prompt := &survey.Confirm{
+		Message: message,
+		Default: false,
+	}
+
+	err := survey.AskOne(prompt, &result)
+	return result, err
+}

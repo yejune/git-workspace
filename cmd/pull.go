@@ -2,18 +2,16 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/yejune/git-workspace/internal/backup"
+	"github.com/yejune/git-workspace/internal/common"
 	"github.com/yejune/git-workspace/internal/git"
 	"github.com/yejune/git-workspace/internal/i18n"
 	"github.com/yejune/git-workspace/internal/interactive"
-	"github.com/yejune/git-workspace/internal/manifest"
 	"github.com/yejune/git-workspace/internal/patch"
 )
 
@@ -39,49 +37,25 @@ func init() {
 }
 
 func runPull(cmd *cobra.Command, args []string) error {
-	// Get repository root
-	repoRoot, err := git.GetRepoRoot()
+	// Load workspace context
+	ctx, err := common.LoadWorkspaceContext()
 	if err != nil {
-		return fmt.Errorf("not in a git repository: %w", err)
+		return err
 	}
 
-	// Load manifest
-	m, err := manifest.Load(repoRoot)
-	if err != nil {
-		return fmt.Errorf("failed to load manifest: %w", err)
-	}
-
-	// Set language from manifest
-	i18n.SetLanguage(m.GetLanguage())
-
-	if len(m.Workspaces) == 0 {
+	if len(ctx.Manifest.Workspaces) == 0 {
 		fmt.Println(i18n.T("no_subs_registered"))
 		return nil
 	}
 
 	// Filter workspaces if path argument provided
-	var workspacesToProcess []manifest.WorkspaceEntry
-	if len(args) > 0 {
-		targetPath := args[0]
-		found := false
-		for _, workspace := range m.Workspaces {
-			if workspace.Path == targetPath {
-				workspacesToProcess = []manifest.WorkspaceEntry{workspace}
-				found = true
-				break
-			}
-		}
-		if !found {
-			return fmt.Errorf(i18n.T("sub_not_found", targetPath))
-		}
-	} else {
-		workspacesToProcess = m.Workspaces
+	workspacesToProcess, err := ctx.FilterWorkspaces(args)
+	if err != nil {
+		return fmt.Errorf(i18n.T("sub_not_found", args[0]))
 	}
 
-	reader := bufio.NewReader(os.Stdin)
-
 	for _, workspace := range workspacesToProcess {
-		fullPath := filepath.Join(repoRoot, workspace.Path)
+		fullPath := filepath.Join(ctx.RepoRoot, workspace.Path)
 
 		// Check if directory exists and is a git repo
 		if !git.IsRepo(fullPath) {
@@ -100,49 +74,32 @@ func runPull(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		// Count uncommitted files
-		modifiedFiles, err := git.GetModifiedFiles(fullPath)
+		// Get workspace status using unified pattern
+		status, err := git.GetWorkspaceStatus(fullPath, workspace.Keep)
 		if err != nil {
 			fmt.Printf("%s:\n", workspace.Path)
-			fmt.Printf("  Failed to get modified files: %v\n", err)
+			fmt.Printf("  Failed to get status: %v\n", err)
 			fmt.Println()
 			continue
 		}
-		untrackedFiles, err := git.GetUntrackedFiles(fullPath)
-		if err != nil {
-			fmt.Printf("%s:\n", workspace.Path)
-			fmt.Printf("  Failed to get untracked files: %v\n", err)
-			fmt.Println()
-			continue
-		}
-		stagedFiles, err := git.GetStagedFiles(fullPath)
-		if err != nil {
-			fmt.Printf("%s:\n", workspace.Path)
-			fmt.Printf("  Failed to get staged files: %v\n", err)
-			fmt.Println()
-			continue
-		}
-		totalUncommitted := len(modifiedFiles) + len(untrackedFiles) + len(stagedFiles)
 
 		// Show current status
 		fmt.Printf("%s (%s):\n", workspace.Path, branch)
-		if totalUncommitted > 0 {
-			fmt.Printf("  %s\n", i18n.T("uncommitted_files", totalUncommitted))
+		if status.TotalUncommitted > 0 {
+			fmt.Printf("  %s\n", i18n.T("uncommitted_files", status.TotalUncommitted))
 		} else {
 			fmt.Printf("  %s\n", i18n.T("clean_directory"))
 		}
 
-		// Ask for confirmation
-		fmt.Print("  " + i18n.T("pull_confirm"))
-		input, err := reader.ReadString('\n')
+		// Ask for confirmation using unified prompt
+		confirmed, err := interactive.ConfirmYesNo("  " + i18n.T("pull_confirm"))
 		if err != nil {
 			fmt.Printf("  %s\n", i18n.T("failed_read_input", err))
 			fmt.Println()
 			continue
 		}
 
-		input = strings.TrimSpace(strings.ToLower(input))
-		if input != "" && input != "y" && input != "yes" {
+		if !confirmed {
 			fmt.Printf("  %s\n", i18n.T("pull_skipped"))
 			fmt.Println()
 			continue
@@ -158,7 +115,7 @@ func runPull(cmd *cobra.Command, args []string) error {
 		// Handle keep files before pulling
 		keepFiles := workspace.Keep
 		if len(keepFiles) > 0 {
-			if err := handleKeepFiles(fullPath, branch, keepFiles, repoRoot, workspace.Path); err != nil {
+			if err := handleKeepFiles(fullPath, branch, keepFiles, ctx.RepoRoot, workspace.Path); err != nil {
 				fmt.Printf("  Keep file handling failed: %v\n", err)
 				fmt.Println()
 				continue
@@ -192,19 +149,14 @@ func runPull(cmd *cobra.Command, args []string) error {
 
 // handleKeepFiles handles keep files with remote changes interactively
 func handleKeepFiles(wsPath, branch string, keepFiles []string, repoRoot string, workspacePath string) error {
-	// CRITICAL: Unskip-worktree before git operations
-	// Philosophy: "Skip-worktree workflow" - unskip → work → skip
-	if err := git.UnapplySkipWorktree(wsPath, keepFiles); err != nil {
-		return fmt.Errorf("failed to unskip-worktree before operations: %w", err)
-	}
+	// Use transaction pattern for skip-worktree handling
+	return git.WithSkipWorktreeTransaction(wsPath, keepFiles, func() error {
+		return handleKeepFilesWork(wsPath, branch, keepFiles, repoRoot, workspacePath)
+	})
+}
 
-	// Ensure we re-skip at the end, even on error
-	defer func() {
-		if err := git.ApplySkipWorktree(wsPath, keepFiles); err != nil {
-			fmt.Printf("  ⚠ Failed to re-apply skip-worktree: %v\n", err)
-		}
-	}()
-
+// handleKeepFilesWork contains the actual work logic (extracted for transaction)
+func handleKeepFilesWork(wsPath, branch string, keepFiles []string, repoRoot string, workspacePath string) error {
 	for _, file := range keepFiles {
 		// Check if file has remote changes
 		hasChanges, err := git.HasRemoteChanges(wsPath, file, branch)

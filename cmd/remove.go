@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/yejune/git-workspace/internal/common"
 	"github.com/yejune/git-workspace/internal/git"
+	"github.com/yejune/git-workspace/internal/interactive"
 	"github.com/yejune/git-workspace/internal/manifest"
 )
 
@@ -39,21 +41,16 @@ func init() {
 func runRemove(cmd *cobra.Command, args []string) error {
 	path := args[0]
 
-	repoRoot, err := git.GetRepoRoot()
+	ctx, err := common.LoadWorkspaceContext()
 	if err != nil {
-		return fmt.Errorf("not in a git repository: %w", err)
+		return err
 	}
 
-	m, err := manifest.Load(repoRoot)
-	if err != nil {
-		return fmt.Errorf("failed to load manifest: %w", err)
-	}
-
-	if !m.Exists(path) {
+	if !ctx.Manifest.Exists(path) {
 		return fmt.Errorf("workspace not found: %s", path)
 	}
 
-	fullPath := filepath.Join(repoRoot, path)
+	fullPath := filepath.Join(ctx.RepoRoot, path)
 
 	// Check for uncommitted changes
 	if git.IsRepo(fullPath) {
@@ -65,18 +62,30 @@ func runRemove(cmd *cobra.Command, args []string) error {
 
 	// NEW: Modified files warning
 	if !removeKeepFiles && git.IsRepo(fullPath) {
-		modified, _ := git.GetModifiedFiles(fullPath)
-		if len(modified) > 0 {
-			fmt.Printf("⚠️  WARNING: %d modified files will be deleted:\n", len(modified))
-			for i, f := range modified {
-				if i < 5 {
-					fmt.Printf("    - %s\n", f)
+		// Get workspace from manifest for keep files
+		var ws *manifest.WorkspaceEntry
+		for i := range ctx.Manifest.Workspaces {
+			if ctx.Manifest.Workspaces[i].Path == path {
+				ws = &ctx.Manifest.Workspaces[i]
+				break
+			}
+		}
+
+		// Get workspace status using unified pattern
+		if ws != nil {
+			status, err := git.GetWorkspaceStatus(fullPath, ws.Keep)
+			if err == nil && len(status.ModifiedFiles) > 0 {
+				fmt.Printf("⚠️  WARNING: %d modified files will be deleted:\n", len(status.ModifiedFiles))
+				for i, f := range status.ModifiedFiles {
+					if i < 5 {
+						fmt.Printf("    - %s\n", f)
+					}
 				}
+				if len(status.ModifiedFiles) > 5 {
+					fmt.Printf("    ... and %d more\n", len(status.ModifiedFiles)-5)
+				}
+				fmt.Println()
 			}
-			if len(modified) > 5 {
-				fmt.Printf("    ... and %d more\n", len(modified)-5)
-			}
-			fmt.Println()
 		}
 	}
 
@@ -85,27 +94,28 @@ func runRemove(cmd *cobra.Command, args []string) error {
 		fmt.Printf("💡 Tip: Use '--keep-files' to keep files\n\n")
 	}
 
-	// Confirm deletion
+	// Confirm deletion using unified prompt
 	if !removeKeepFiles && !removeForce {
-		fmt.Printf("Remove workspace '%s' and delete its files? [y/N] ", path)
-		var response string
-		fmt.Scanln(&response)
-		if response != "y" && response != "Y" {
+		confirmed, err := interactive.ConfirmYN(fmt.Sprintf("Remove workspace '%s' and delete its files? [y/N] ", path))
+		if err != nil {
+			return fmt.Errorf("failed to read confirmation: %w", err)
+		}
+		if !confirmed {
 			fmt.Println("Cancelled.")
 			return nil
 		}
 	}
 
 	// Remove from manifest
-	// Note: m.Remove always succeeds if m.Exists returned true
-	m.Remove(path)
+	// Note: ctx.Manifest.Remove always succeeds if ctx.Manifest.Exists returned true
+	ctx.Manifest.Remove(path)
 
-	if err := manifest.Save(repoRoot, m); err != nil {
+	if err := ctx.SaveManifest(); err != nil {
 		return fmt.Errorf("failed to save manifest: %w", err)
 	}
 
 	// Remove from .gitignore
-	if err := git.RemoveFromGitignore(repoRoot, path); err != nil {
+	if err := git.RemoveFromGitignore(ctx.RepoRoot, path); err != nil {
 		fmt.Printf("⚠ Failed to update .gitignore: %v\n", err)
 	}
 

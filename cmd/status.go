@@ -8,9 +8,9 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"github.com/yejune/git-workspace/internal/common"
 	"github.com/yejune/git-workspace/internal/git"
 	"github.com/yejune/git-workspace/internal/i18n"
-	"github.com/yejune/git-workspace/internal/manifest"
 )
 
 var statusCmd = &cobra.Command{
@@ -45,41 +45,20 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		printGray   = func(format string, a ...interface{}) { color.New(color.Faint).Fprintf(os.Stdout, format, a...) }
 	)
 
-	repoRoot, err := git.GetRepoRoot()
+	ctx, err := common.LoadWorkspaceContext()
 	if err != nil {
-		return fmt.Errorf("not in a git repository: %w", err)
+		return err
 	}
 
-	m, err := manifest.Load(repoRoot)
-	if err != nil {
-		return fmt.Errorf("failed to load manifest: %w", err)
-	}
-
-	// Set language from manifest
-	i18n.SetLanguage(m.GetLanguage())
-
-	if len(m.Workspaces) == 0 {
+	if len(ctx.Manifest.Workspaces) == 0 {
 		fmt.Println(i18n.T("no_subs_registered"))
 		return nil
 	}
 
 	// Filter workspaces if path argument provided
-	var workspacesToProcess []manifest.WorkspaceEntry
-	if len(args) > 0 {
-		targetPath := args[0]
-		found := false
-		for _, workspace := range m.Workspaces {
-			if workspace.Path == targetPath {
-				workspacesToProcess = []manifest.WorkspaceEntry{workspace}
-				found = true
-				break
-			}
-		}
-		if !found {
-			return fmt.Errorf(i18n.T("sub_not_found", targetPath))
-		}
-	} else {
-		workspacesToProcess = m.Workspaces
+	workspacesToProcess, err := ctx.FilterWorkspaces(args)
+	if err != nil {
+		return fmt.Errorf(i18n.T("sub_not_found", args[0]))
 	}
 
 	for idx, ws := range workspacesToProcess {
@@ -89,7 +68,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 			fmt.Println()
 		}
 
-		fullPath := filepath.Join(repoRoot, ws.Path)
+		fullPath := filepath.Join(ctx.RepoRoot, ws.Path)
 
 		// Workspace header
 		printCyan("%s", ws.Path)
@@ -114,38 +93,39 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		// Section 1: Local Status
 		printBlue("  %s\n", i18n.T("local_status"))
 
-		modifiedFiles, _ := git.GetModifiedFiles(fullPath)
-		untrackedFiles, _ := git.GetUntrackedFiles(fullPath)
-		stagedFiles, _ := git.GetStagedFiles(fullPath)
-
+		// Get workspace status using unified pattern
+		status, err := git.GetWorkspaceStatus(fullPath, ws.Keep)
 		hasLocalChanges := false
-
-		if len(modifiedFiles) > 0 {
-			hasLocalChanges = true
-			printYellow("    %s\n", i18n.T("files_modified", len(modifiedFiles)))
-			for _, file := range modifiedFiles {
-				printGray("      - %s\n", file)
+		if err != nil {
+			printRed("    Failed to get status: %v\n", err)
+		} else {
+			if len(status.ModifiedFiles) > 0 {
+				hasLocalChanges = true
+				printYellow("    %s\n", i18n.T("files_modified", len(status.ModifiedFiles)))
+				for _, file := range status.ModifiedFiles {
+					printGray("      - %s\n", file)
+				}
 			}
-		}
 
-		if len(untrackedFiles) > 0 {
-			hasLocalChanges = true
-			printYellow("    %s\n", i18n.T("files_untracked", len(untrackedFiles)))
-			for _, file := range untrackedFiles {
-				printGray("      - %s\n", file)
+			if len(status.UntrackedFiles) > 0 {
+				hasLocalChanges = true
+				printYellow("    %s\n", i18n.T("files_untracked", len(status.UntrackedFiles)))
+				for _, file := range status.UntrackedFiles {
+					printGray("      - %s\n", file)
+				}
 			}
-		}
 
-		if len(stagedFiles) > 0 {
-			hasLocalChanges = true
-			printYellow("    %s\n", i18n.T("files_staged", len(stagedFiles)))
-			for _, file := range stagedFiles {
-				printGray("      - %s\n", file)
+			if len(status.StagedFiles) > 0 {
+				hasLocalChanges = true
+				printYellow("    %s\n", i18n.T("files_staged", len(status.StagedFiles)))
+				for _, file := range status.StagedFiles {
+					printGray("      - %s\n", file)
+				}
 			}
-		}
 
-		if !hasLocalChanges {
-			printGreen("    %s\n", i18n.T("clean_working_tree"))
+			if !hasLocalChanges {
+				printGreen("    %s\n", i18n.T("clean_working_tree"))
+			}
 		}
 		fmt.Println()
 
@@ -189,11 +169,11 @@ func runStatus(cmd *cobra.Command, args []string) error {
 			if hasLocalChanges {
 				printYellow("    %s\n", i18n.T("resolve_commit"))
 				printGray("       cd %s\n", ws.Path)
-				if len(stagedFiles) > 0 || len(modifiedFiles) > 0 {
+				if len(status.StagedFiles) > 0 || len(status.ModifiedFiles) > 0 {
 					printGray("       git add .\n")
 					printGray("       git commit -m \"your message\"\n")
 				}
-				if len(untrackedFiles) > 0 {
+				if len(status.UntrackedFiles) > 0 {
 					printGray("       %s\n", i18n.T("resolve_or_gitignore"))
 				}
 				fmt.Println()
