@@ -1,8 +1,8 @@
 class GitMultirepo < Formula
   desc "Multi-repository management tool for nested git repositories with independent push capability"
   homepage "https://github.com/yejune/git-multirepo"
-  url "https://github.com/yejune/git-multirepo/archive/refs/tags/v0.2.19.tar.gz"
-  sha256 "535d9164a3091e209acb7a5af94e5474a69c3ae07c735d8f578187c2d3f4951f"
+  url "https://github.com/yejune/git-multirepo/archive/refs/tags/v0.2.20.tar.gz"
+  sha256 "41aa14c770f739bb4cf210259a2a390d1ea5916ef6b75380aa7883b40fabd86a"
   license "MIT"
   head "https://github.com/yejune/git-multirepo.git", branch: "main"
 
@@ -21,12 +21,12 @@ class GitMultirepo < Formula
   def caveats
     <<~EOS
             git-multirepo has been installed!
-
+      
       Quick Start:
         git multirepo clone https://github.com/user/repo.git
         git multirepo clone https://github.com/user/repo.git packages/repo
         git multirepo clone -b develop https://github.com/user/repo.git
-
+      
       Commands:
         git multirepo sync      Apply configuration
         git multirepo list      List workspaces
